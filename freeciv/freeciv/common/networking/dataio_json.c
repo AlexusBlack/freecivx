@@ -19,7 +19,9 @@
 
 #include "fc_prehdrs.h"
 
+#ifndef __EMSCRIPTEN__
 #include <curl/curl.h>
+#endif
 
 #include <limits.h>
 #include <math.h>
@@ -64,6 +66,7 @@ static bool dio_get_bool8_json_internal(json_t *json_packet,
                                         const struct plocation *location,
                                         bool *dest);
 
+#ifndef __EMSCRIPTEN__
 /**********************************************************************//**
   Returns a CURL easy handle for name encoding and decoding
 **************************************************************************/
@@ -80,6 +83,7 @@ static CURL *get_curl(void)
 
   return curl_easy_handle;
 }
+#endif /* __EMSCRIPTEN__ */
 
 static int plocation_write_data(json_t *item,
                                 const struct plocation *location,
@@ -1114,6 +1118,11 @@ int dio_put_estring_json(struct json_data_out *dout,
                          const struct plocation *location,
                          const char *value)
 {
+#ifdef __EMSCRIPTEN__
+  /* Emscripten have no libcurl. */
+  return dio_put_string_json(dout, location, value);
+
+#else
   int e;
 
   if (dout->json) {
@@ -1132,6 +1141,7 @@ int dio_put_estring_json(struct json_data_out *dout,
   }
 
   return e;
+#endif
 }
 
 /**********************************************************************//**
@@ -1440,6 +1450,15 @@ bool dio_get_estring_json(struct connection *pc, struct data_in *din,
                           const struct plocation *location,
                           char *dest, size_t max_dest_size)
 {
+  #ifdef __EMSCRIPTEN__
+  /* Emscripten have no libcurl. */
+  if (pc->json_mode) {
+    return dio_get_string_json_internal(pc->json_packet, location,
+                                        dest, max_dest_size);
+  } else {
+    return dio_get_estring_raw(din, dest, max_dest_size);
+  }
+  #else
   if (pc->json_mode) {
     char *escaped_value;
     char *unescaped_value;
@@ -1474,6 +1493,7 @@ bool dio_get_estring_json(struct connection *pc, struct data_in *din,
   }
 
   return TRUE;
+  #endif /* __EMSCRIPTEN__ */
 }
 
 #endif /* FREECIV_JSON_CONNECTION */

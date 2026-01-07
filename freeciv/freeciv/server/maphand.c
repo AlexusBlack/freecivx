@@ -2732,7 +2732,7 @@ static inline void get_full_username(char *buf, int buflen,
   Text to popup on a middle-click in the mapview.
   Mostly a copy from client/text.c
 **************************************************************************/
-static const void web_popup_info_text(struct astring *str,
+static void web_popup_info_text(struct astring *str,
                                       struct tile *ptile,
                                       struct player *pplayer,
                                       struct unit *punit,
