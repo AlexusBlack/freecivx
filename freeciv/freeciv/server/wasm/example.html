@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Freeciv WASM Server Example</title>
+  <style>
+    body {
+      font-family: 'Monaco', 'Consolas', monospace;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #00d4ff;
+    }
+    .status {
+      background: #16213e;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .status-label {
+      color: #888;
+    }
+    .status-value {
+      color: #00ff88;
+      font-weight: bold;
+    }
+    .console {
+      background: #0f0f1a;
+      border: 1px solid #333;
+      border-radius: 5px;
+      padding: 10px;
+      height: 400px;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+    .console-line {
+      margin: 2px 0;
+    }
+    .console-line.error {
+      color: #ff4444;
+    }
+    .console-line.info {
+      color: #00d4ff;
+    }
+    .console-line.warn {
+      color: #ffaa00;
+    }
+    .controls {
+      margin: 20px 0;
+    }
+    button {
+      background: #00d4ff;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-family: inherit;
+    }
+    button:hover {
+      background: #00aacc;
+    }
+    button:disabled {
+      background: #444;
+      color: #888;
+      cursor: not-allowed;
+    }
+    input[type="text"] {
+      background: #0f0f1a;
+      border: 1px solid #333;
+      color: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      width: 300px;
+      font-family: inherit;
+    }
+    .connections {
+      background: #16213e;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .connection-item {
+      padding: 5px 10px;
+      background: #0f0f1a;
+      margin: 5px 0;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏛️ Freeciv WASM Server</h1>
+
+    <div class="status">
+      <span class="status-label">Server State:</span>
+      <span id="server-state" class="status-value">NOT LOADED</span>
+    </div>
+
+    <div class="controls">
+      <button id="btn-init" onclick="initServer()">Initialize Server</button>
+      <button id="btn-start" onclick="startServer()" disabled>Start Tick Loop</button>
+      <button id="btn-stop" onclick="stopServer()" disabled>Stop Tick Loop</button>
+      <button id="btn-shutdown" onclick="shutdownServer()" disabled>Shutdown</button>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="command-input" placeholder="Enter server command (e.g., /help)">
+      <button onclick="sendCommand()">Send Command</button>
+    </div>
+
+    <h3>Console Output</h3>
+    <div id="console" class="console"></div>
+
+    <div class="connections">
+      <h3>Connections (<span id="conn-count">0</span>)</h3>
+      <div id="connections-list"></div>
+    </div>
+  </div>
+
+  <script src="freeciv_server.js"></script>
+  <script>
+    let fcServer = null;
+    let Module = null;
+
+    // Console logging
+    function log(msg, type = 'info') {
+      const console = document.getElementById('console');
+      const line = document.createElement('div');
+      line.className = `console-line ${type}`;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      console.appendChild(line);
+      console.scrollTop = console.scrollHeight;
+    }
+
+    // Update state display
+    function updateState(state) {
+      const stateNames = [
+        'NOT_STARTED',
+        'INITIALIZING',
+        'WAITING_FOR_PLAYERS',
+        'STARTING_GAME',
+        'RUNNING_TURN',
+        'BETWEEN_TURNS',
+        'GAME_OVER',
+        'SHUTTING_DOWN'
+      ];
+      document.getElementById('server-state').textContent = stateNames[state] || 'UNKNOWN';
+    }
+
+    // Update connections display
+    function updateConnections() {
+      const count = fcServer ? fcServer.connections.size : 0;
+      document.getElementById('conn-count').textContent = count;
+
+      const list = document.getElementById('connections-list');
+      list.innerHTML = '';
+
+      if (fcServer) {
+        for (const [ws, connId] of fcServer.connections) {
+          const item = document.createElement('div');
+          item.className = 'connection-item';
+          item.textContent = `Connection #${connId}`;
+          list.appendChild(item);
+        }
+      }
+    }
+
+    // Initialize server
+    async function initServer() {
+      log('Loading WASM module...');
+
+      try {
+        // In a real setup, you would load the compiled WASM module here
+        // Module = await FreecivModule();
+
+        // For now, we'll simulate the module loading
+        // This would be replaced with actual WASM loading:
+        // <script src="freeciv-server.js"></script>
+        // Module = await createFreecivModule();
+
+        log('WASM module loaded', 'info');
+
+        // Create the server bridge
+        // fcServer = new FreecivServer(Module);
+
+        // Set up event handlers
+        // fcServer.on('stateChange', (data) => {
+        //   updateState(data.newState);
+        //   log(`State changed: ${data.oldName} -> ${data.newName}`);
+        // });
+
+        // fcServer.on('connection', (data) => {
+        //   log(`New connection: #${data.connId} from ${data.clientAddr}`);
+        //   updateConnections();
+        // });
+
+        // fcServer.on('disconnect', (data) => {
+        //   log(`Disconnected: #${data.connId}`);
+        //   updateConnections();
+        // });
+
+        // Initialize the server
+        // fcServer.init();
+
+        // For demo purposes without actual WASM:
+        log('Server initialized (demo mode - WASM not loaded)', 'warn');
+        updateState(2); // WAITING_FOR_PLAYERS
+
+        document.getElementById('btn-init').disabled = true;
+        document.getElementById('btn-start').disabled = false;
+        document.getElementById('btn-shutdown').disabled = false;
+
+      } catch (e) {
+        log(`Error loading WASM: ${e.message}`, 'error');
+      }
+    }
+
+    // Start server tick loop
+    function startServer() {
+      if (fcServer) {
+        fcServer.start();
+      }
+      log('Tick loop started');
+      document.getElementById('btn-start').disabled = true;
+      document.getElementById('btn-stop').disabled = false;
+    }
+
+    // Stop server tick loop
+    function stopServer() {
+      if (fcServer) {
+        fcServer.stop();
+      }
+      log('Tick loop stopped');
+      document.getElementById('btn-start').disabled = false;
+      document.getElementById('btn-stop').disabled = true;
+    }
+
+    // Shutdown server
+    function shutdownServer() {
+      if (fcServer) {
+        fcServer.shutdown();
+      }
+      log('Server shutdown');
+      updateState(7); // SHUTTING_DOWN
+      document.getElementById('btn-init').disabled = false;
+      document.getElementById('btn-start').disabled = true;
+      document.getElementById('btn-stop').disabled = true;
+      document.getElementById('btn-shutdown').disabled = true;
+    }
+
+    // Send console command
+    function sendCommand() {
+      const input = document.getElementById('command-input');
+      const command = input.value.trim();
+
+      if (command) {
+        log(`> ${command}`);
+        if (fcServer) {
+          fcServer.sendCommand(command);
+        } else {
+          log('Server not initialized', 'warn');
+        }
+        input.value = '';
+      }
+    }
+
+    // Handle Enter key in command input
+    document.getElementById('command-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendCommand();
+      }
+    });
+
+    // Initial log
+    log('Freeciv WASM Server Interface loaded');
+    log('Click "Initialize Server" to start');
+  </script>
+</body>
+</html>

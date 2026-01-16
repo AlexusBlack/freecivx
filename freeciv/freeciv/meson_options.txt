@@ -91,3 +91,13 @@ option('min-win-ver',
        type: 'string',
        value: '',
        description: 'Minimum Windows version to support')
+
+option('wasm-server',
+       type: 'boolean',
+       value: false,
+       description: 'Build WASM server module (requires Emscripten)')
+
+option('wasm-server-debug',
+       type: 'boolean',
+       value: false,
+       description: 'Build WASM server with debug symbols and source maps')

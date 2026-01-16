@@ -157,8 +157,6 @@ else
 endif
 
 if meson.is_cross_build()
-  cross_inc_str = meson.get_cross_property('cross_inc_path')
-  cross_inc_path = [cross_inc_str]
   cross_lib_path = [meson.get_cross_property('cross_lib_path')]
   crosser = meson.get_cross_property('crosser')
 
@@ -168,8 +166,14 @@ if meson.is_cross_build()
   error fail
 #endif''')
     emscripten = true
+    # Emscripten handles its own system includes - explicitly adding them
+    # causes "Including files directly from the emscripten source tree is not supported"
+    cross_inc_str = ''
+    cross_inc_path = []
   else
     emscripten = false
+    cross_inc_str = meson.get_cross_property('cross_inc_path')
+    cross_inc_path = [cross_inc_str]
   endif
 else
   cross_inc_str = ''
@@ -1232,6 +1236,77 @@ if server_type != 'disabled'
                 install: true,
                 install_dir: join_paths(get_option('datadir'), 'metainfo'))
 
+endif
+
+# WASM Server build (requires Emscripten)
+wasm_server_enabled = get_option('wasm-server')
+if wasm_server_enabled
+  if not emscripten
+    error('wasm-server option requires Emscripten toolchain (cross-compile with emcc)')
+  endif
+
+  wasm_server_inc = [server_inc, include_directories('server/wasm')]
+
+  wasm_debug = get_option('wasm-server-debug')
+
+  # WASM-specific compiler flags
+  wasm_common_args = [
+    '-s', 'WASM=1',
+    '-s', 'ALLOW_MEMORY_GROWTH=1',
+    '-s', 'INITIAL_MEMORY=67108864',  # 64MB initial
+    '-s', 'MAXIMUM_MEMORY=536870912', # 512MB max
+    '-s', 'MODULARIZE=1',
+    '-s', 'EXPORT_NAME="createFreecivServer"',
+    '-s', 'EXPORTED_FUNCTIONS=["_main","_wasm_server_init","_wasm_server_tick","_wasm_server_get_state","_wasm_server_shutdown","_wasm_net_accept_connection","_wasm_net_receive_data","_wasm_net_connection_closed","_wasm_console_input","_malloc","_free"]',
+    '-s', 'EXPORTED_RUNTIME_METHODS=["ccall","cwrap","UTF8ToString","stringToUTF8","HEAPU8","getValue","setValue"]',
+    '-s', 'NO_EXIT_RUNTIME=1',
+  ]
+
+  if wasm_debug
+    wasm_link_args = wasm_common_args + [
+      '-g',
+      '-s', 'ASSERTIONS=2',
+      '-s', 'SAFE_HEAP=1',
+      '-s', 'STACK_OVERFLOW_CHECK=2',
+      '--source-map-base', './',
+    ]
+    wasm_c_args = ['-g', '-O0']
+  else
+    wasm_link_args = wasm_common_args + [
+      '-O3',
+      '-s', 'ASSERTIONS=0',
+    ]
+    wasm_c_args = ['-O3']
+  endif
+
+  # WASM server static library
+  wasm_server_lib = static_library('fc_wasm_server',
+    'server/wasm/wasm_server.c',
+    'server/wasm/wasm_net.c',
+    include_directories: wasm_server_inc,
+    c_args: wasm_c_args,
+    dependencies: lua_dep
+  )
+
+  # WASM server module
+  wasm_server = executable('freeciv-server-wasm',
+    'server/civserver.c',
+    include_directories: wasm_server_inc,
+    link_with: [wasm_server_lib, server_lib, common_lib, ais],
+    link_args: wasm_link_args,
+    c_args: wasm_c_args,
+    dependencies: [gettext_dep],
+    name_suffix: 'js',
+    install: true
+  )
+
+  # Install the JavaScript bridge
+  install_data(
+    'server/wasm/freeciv_server.js',
+    install_dir: join_paths(get_option('datadir'), 'freeciv/wasm')
+  )
+
+  message('WASM server build enabled')
 endif
 
 install_data(
