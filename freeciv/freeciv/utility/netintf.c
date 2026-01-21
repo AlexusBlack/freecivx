@@ -14,6 +14,10 @@
 /***********************************************************************
   Common network interface.
 ***********************************************************************/
+#ifdef __EMSCRIPTEN__
+/* For Emscripten builds, use virtual socket implementation */
+#include "netintf_virtual.c"
+#else
 
 #ifdef HAVE_CONFIG_H
 #include <fc_config.h>
@@ -697,3 +701,4 @@ int addr_family_for_announce_type(enum announce_type announce)
 
   return AF_UNSPEC;
 }
+#endif /* !__EMSCRIPTEN__ */

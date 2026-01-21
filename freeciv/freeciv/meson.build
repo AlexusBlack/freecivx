@@ -168,8 +168,17 @@ if meson.is_cross_build()
   error fail
 #endif''')
     emscripten = true
+    message('Emscripten cross-build detected')
+    # add ALLOW_MEMORY_GROWTH for emscripten builds
+    add_global_link_arguments('-s', 'ALLOW_MEMORY_GROWTH=1',
+                              language : [ 'c', 'cpp'])
+    # set stack size to 30mb
+    add_global_link_arguments('-s', 'STACK_SIZE=31457280',
+                              language : [ 'c', 'cpp'])
   else
     emscripten = false
+    message('Non-Emscripten cross-build detected')
+    message('Extra: ' + c_compiler.get_id())
   endif
 else
   cross_inc_str = ''
@@ -985,6 +994,7 @@ common_lib = library('freeciv',
   'utility/mem.c',
   'utility/netfile.c',
   'utility/netintf.c',
+  'utility/netintf_virtual.c',
   'utility/rand.c',
   'utility/randseed.c',
   'utility/registry.c',

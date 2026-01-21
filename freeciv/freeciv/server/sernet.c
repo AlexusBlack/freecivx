@@ -91,6 +91,14 @@
 
 #include "sernet.h"
 
+#ifdef __EMSCRIPTEN__
+#include "utility/netintf_virtual.h"
+#define socket(d,t,p)     vsock_socket(d,t,p)
+#define bind(s,a,l)       vsock_bind(s,a,l)
+#define listen(s,b)       vsock_listen(s,b)
+#define accept(s,a,l)     vsock_accept(s,a,l)
+#endif
+
 static struct connection connections[MAX_NUM_CONNECTIONS];
 
 static int *listen_socks;
