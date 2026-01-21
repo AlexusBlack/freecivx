@@ -175,6 +175,11 @@ if meson.is_cross_build()
     # set stack size to 30mb
     add_global_link_arguments('-s', 'STACK_SIZE=31457280',
                               language : [ 'c', 'cpp'])
+    # include ruleset files
+    add_global_link_arguments('--preload-file', '/home/alexchernov/github/freecivx/freeciv/freeciv/data/classic@data/classic', language : [ 'c', 'cpp'])
+    add_global_link_arguments('--preload-file', '/home/alexchernov/github/freecivx/freeciv/freeciv/data/default@data/default', language : [ 'c', 'cpp'])
+    add_global_link_arguments('--preload-file', '/home/alexchernov/github/freecivx/freeciv/freeciv/data/nation@data/nation', language : [ 'c', 'cpp'])
+    add_global_link_arguments('--preload-file', '/home/alexchernov/github/freecivx/freeciv/freeciv/data/override@data/override', language : [ 'c', 'cpp'])
   else
     emscripten = false
     message('Non-Emscripten cross-build detected')
