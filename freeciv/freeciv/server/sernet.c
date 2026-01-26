@@ -92,6 +92,7 @@
 #include "sernet.h"
 
 #ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 #include "utility/netintf_virtual.h"
 #define socket(d,t,p)     vsock_socket(d,t,p)
 #define bind(s,a,l)       vsock_bind(s,a,l)
@@ -581,6 +582,9 @@ enum server_events server_sniff_all_input(void)
 #endif /* FREECIV_HAVE_LIBREADLINE */
 
   while (TRUE) {
+    #ifdef __EMSCRIPTEN__
+    emscripten_sleep(0);
+    #endif
     int selret;
 
     con_prompt_on();   /* accepting new input */
