@@ -41,6 +41,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 /* dependencies/lua */
 #include "lua.h" /* lua_Integer */
@@ -2011,6 +2014,9 @@ int identity_number(void)
   int retries = 0;
 
   while (identity_number_is_used(increment_identity_number())) {
+    #ifdef __EMSCRIPTEN__
+    emscripten_sleep(0);
+    #endif
     /* try again */
     if (++retries >= IDENTITY_NUMBER_SIZE) {
       /* Always fails. */
@@ -2872,6 +2878,9 @@ static void srv_running(void)
 
   fc_assert(S_S_RUNNING == server_state());
   while (S_S_RUNNING == server_state()) {
+    #ifdef __EMSCRIPTEN__
+    emscripten_sleep(0);
+    #endif
     /* The beginning of a turn.
      *
      * We have to initialize data as well as do some actions.  However when
@@ -2945,6 +2954,9 @@ static void srv_running(void)
       }
 
       while (server_sniff_all_input() == S_E_OTHERWISE) {
+        #ifdef __EMSCRIPTEN__
+        emscripten_sleep(0);
+        #endif
         /* nothing */
       }
 
@@ -3511,6 +3523,9 @@ void fc__noreturn srv_main(void)
 
   /* Run server loop */
   do {
+    #ifdef __EMSCRIPTEN__
+    emscripten_sleep(0);
+    #endif
     set_server_state(S_S_INITIAL);
 
     /* Load a script file. */
@@ -3528,6 +3543,9 @@ void fc__noreturn srv_main(void)
                srvarg.port);
     /* Remain in S_S_INITIAL until all players are ready. */
     while (S_E_FORCE_END_OF_SNIFF != server_sniff_all_input()) {
+      #ifdef __EMSCRIPTEN__
+      emscripten_sleep(0);
+      #endif
       /* When force_end_of_sniff is used in pregame, it means that the server
        * is ready to start (usually set within start_game()). */
     }
@@ -3542,6 +3560,9 @@ void fc__noreturn srv_main(void)
 
     /* Remain in S_S_OVER until players log out */
     while (conn_list_size(game.est_connections) > 0) {
+      #ifdef __EMSCRIPTEN__
+      emscripten_sleep(0);
+      #endif
       server_sniff_all_input();
     }
 

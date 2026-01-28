@@ -20,6 +20,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/console.h>
+#endif
+
 /* utility */
 #include "deprecations.h"
 #include "fciconv.h"
@@ -366,6 +371,44 @@ bool log_do_output_for_level_at_location(enum log_level level,
 static void log_write(FILE *fs, enum log_level level, bool print_from_where,
                       const char *where, const char *message)
 {
+#ifdef __EMSCRIPTEN__
+  /* In Emscripten/WASM, always output to browser console */
+  {
+    char console_buf[MAX_LEN_LOG_LINE];
+    char prefix[128];
+
+    if (log_prefix) {
+      fc_snprintf(prefix, sizeof(prefix), "[%s] ", log_prefix());
+    } else {
+      prefix[0] = '\0';
+    }
+
+    if (print_from_where && where) {
+      fc_snprintf(console_buf, sizeof(console_buf), "%d: %s%s%s",
+                  level, prefix, where, message);
+    } else {
+      fc_snprintf(console_buf, sizeof(console_buf), "%d: %s%s",
+                  level, prefix, message);
+    }
+
+    /* Route to appropriate console function based on log level */
+    switch (level) {
+    case LOG_FATAL:
+    case LOG_ERROR:
+      emscripten_console_error(console_buf);
+      break;
+    case LOG_WARN:
+      emscripten_console_warn(console_buf);
+      break;
+    case LOG_NORMAL:
+    case LOG_VERBOSE:
+    case LOG_DEBUG:
+    default:
+      emscripten_console_log(console_buf);
+      break;
+    }
+  }
+#else
   if (log_filename || (!log_callback)) {
     char prefix[128];
 
@@ -383,6 +426,7 @@ static void log_write(FILE *fs, enum log_level level, bool print_from_where,
     }
     fflush(fs);
   }
+#endif /* __EMSCRIPTEN__ */
 
   if (log_callback) {
     if (print_from_where) {

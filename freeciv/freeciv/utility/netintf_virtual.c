@@ -348,6 +348,8 @@ int fc_writesocket(int sock, const void *buf, size_t size)
     }
   }, vs->client_id);
 
+  emscripten_sleep(0);
+
   return written;
 }
 
