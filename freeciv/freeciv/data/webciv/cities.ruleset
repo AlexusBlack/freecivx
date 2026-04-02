@@ -7,9 +7,9 @@
 ; use your new customized file.
 
 [datafile]
-description="Cities data for Freeciv"
-options="+Freeciv-ruleset-Devel-2017.Jan.02 web-compatible"
-format_version=20
+description = "Cities data for Freeciv"
+options = "+Freeciv-ruleset-3.3-Devel-2023.Feb.24 web-compatible"
+format_version = 40
 
 ; /* <-- avoid gettext warnings
 ;
@@ -55,7 +55,7 @@ reqs		=
 ; Nothing
     }
 helptext        = _("\
-Each Entertainer produces two luxury points for their city per turn. \
+Each entertainer produces two luxury points for their city per turn. \
 See the section on Happiness for the effects of luxury points.\
 ")
 
@@ -69,7 +69,7 @@ reqs		=
 ; Nothing
     }
 helptext        = _("\
-Each Scientist adds three points to your empire's research output \
+Each scientist adds three points to your empire's research output \
 per turn.\
 ")
 
@@ -87,64 +87,13 @@ Each tax collector produces three extra gold for your treasury \
 per turn.\
 ")
 
-[specialist_worker]
-name            = _("Laborer")
-; (The original specialist names in the classic ruleset and derivatives were
-; not designed to be user-visible.)
-rule_name       = "worker"
-short_name	= _("?Laborer:L")
-graphic         = "specialist.worker"
-reqs		=
-    { "type", "name", "range"
-; Nothing
-    }
-helptext        = _("\
-Each Laborer produces one production point for their city per turn. \
-")
-
-[specialist_merchant]
-name            = _("Merchant")
-; (The original specialist names in the classic ruleset and derivatives were
-; not designed to be user-visible.)
-rule_name       = "merchant"
-short_name	= _("?Merchant:M")
-graphic         = "specialist.merchant"
-reqs		=
-    { "type", "name", "range"
-; Nothing
-    }
-helptext        = _("\
-Each Merchant produces two trade points for their city per turn.\
- Trade will then be partioned by your nation's tax rates into\
- Gold, Science, and Luxury.\
-")
-
-[specialist_farmer]
-name            = _("Farmer")
-; (The original specialist names in the classic ruleset and derivatives were
-; not designed to be user-visible.)
-rule_name       = "farmer"
-short_name	= _("?Farmer:F")
-graphic         = "specialist.farmer"
-reqs		=
-    { "type", "name", "range"
-; Nothing
-    }
-helptext        = _("\
-Each Farmer provides one food for their city per turn. Yet each\
- citizen consumes 2 food/turn. Assigning a farmer may be useful\
- for a citizen who otherwise produces no food.\
-")
-
-
-
 [parameters]
-add_to_size_limit  = 40		; cities >= this cannot be added to.
+add_to_size_limit  = 8		; cities >= this cannot be added to.
 angry_citizens = TRUE           ; set to FALSE to disable angry citizens
 celebrate_size_limit = 3        ; cities >= can celebrate
 
 changable_tax = TRUE            ; set to FALSE to disallow changing of tax rates
-;forced_science = 0		        ; set these fields when changeable_tax is turned off
+;forced_science = 0		; set these fields when changeable_tax is turned off
 ;forced_luxury = 100
 ;forced_gold = 0
 
@@ -153,11 +102,13 @@ vision_reveal_tiles  = TRUE     ; civ1 & 2 default FALSE
 pop_report_zeroes    = 4        ; Population in reports in tens of thousands
 
 [citizen]
-nationality          = TRUE     ; account for the nationality of the citizens
-convert_speed        = 1000     ; per mille, base probability of 1 citizen nationalizing. x/1000
+nationality          = FALSE    ; account for the nationality of the citizens
+ubuilder_nationality = FALSE    ; does pop_cost unit get builder`s nationality,
+                                ; or that of the majority of the citizens in the city
+convert_speed        = 50       ; base probability 50/1000 -> once every 20 turns
 partisans_pct        = 0        ; percentage of own nationality to inspire partisans
                                 ; if 0, original city owner information is used instead
-conquest_convert_pct = 33       ; percentage which converts to the new nation
+conquest_convert_pct = 0        ; percentage which converts to the new nation
                                 ; after a city was conquered. Applied separately for each
                                 ; nationality present in the city, and number of
                                 ; converted people rounded up
@@ -182,5 +133,5 @@ food_wipe         = TRUE
 gold_wipe         = TRUE
 
 shield_protected  = "EvacuateFirst"
-shield_unit_act   = "Help Wonder", "Recycle Unit", "Disband Unit"
+shield_unit_act   = "Help Wonder", "Disband Unit Recover", "Disband Unit"
 shield_wipe       = FALSE

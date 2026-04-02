@@ -1,5 +1,5 @@
 
-; Modifying this file：
+; Modifying this file:
 ; You should not modify this file except to make bugfixes or
 ; for other "maintenance".  If you want to make custom changes,
 ; you should create a new datadir subdirectory and copy this file
@@ -8,9 +8,9 @@
 ; use your new customized file.
 
 [datafile]
-description="Technology data for Freeciv"
-options="+Freeciv-ruleset-Devel-2017.Jan.02 web-compatible"
-format_version=20
+description = "Multiplayer technology data for Freeciv"
+options = "+Freeciv-ruleset-3.3-Devel-2023.Feb.24 web-compatible"
+format_version = 40
 
 [control]
 ; Names for custom tech flags. There can be up to 8 of these.
@@ -24,7 +24,7 @@ format_version=20
 
 ; /* <-- avoid gettext warnings
 ;
-; Tech classes：
+; Tech classes:
 ;
 ; First one is the default one.
 ; If there is none, tech classes feature is disabled
@@ -46,14 +46,14 @@ format_version=20
 
 ; /* <-- avoid gettext warnings
 ;
-; Below：The individual advances, one per section.
+; Below: The individual advances, one per section.
 ; The number can be variable, up to 250.
 ;
 ; The actual tag used (the * in [advance_*]) does not matter, except
 ; it must be unique within this file, and it may be used in debug
 ; output when reading this file.
 ;
-; Notes：
+; Notes:
 ;
 ; name          = translatable name as seen by user
 ; rule_name     = (optional) internal name for savegames, rulesets etc; if
@@ -78,7 +78,7 @@ format_version=20
 ;                 tech requirements because it is a requirement vector.
 ;                 See doc/README.effects to learn more about requirement
 ;                 vectors.
-;                 Requireing a tech here in stead of in req1, req2 or
+;                 Requiring a tech here instead of in req1, req2 or
 ;                 root_req is not supported yet.
 ;                 Requirements that may become fulfilled during the game
 ;                 when they weren't at the start of the game is not
@@ -99,12 +99,13 @@ format_version=20
 ; it should be listed as req1.
 ;
 ; As well as custom flags defined above, the following flag strings are
-; possible：
+; possible:
 ;
 ; "Bonus_Tech"          = player gets extra tech if reached first
-; "Bridge"              = "Settler" unit types can build roads with
-;                         "RequiresBridge" flag over roads with
-;                         "PreventsOtherRoads" flag (rivers)
+; "Bridge"              = "Settler" unit types can build extras that
+;                         require bridge when occurring with some other
+;                         extra. See "bridged_over" extra property in
+;                         terrain.ruleset.
 ; "Build_Airborne"      = from now on can build air units (for use by AI)
 ; "Claim_Ocean"         = Player claims ocean tiles even if they are not
 ;                         adjacent to border source
@@ -120,7 +121,6 @@ req2     = "Machine Tools"
 flags    = ""
 graphic     = "a.advanced_flight"
 graphic_alt = "-"
-cost = 5430
 
 [advance_alphabet]
 name     = _("Alphabet")
@@ -129,8 +129,6 @@ req2     = "None"
 flags    = ""
 graphic     = "a.alphabet"
 graphic_alt = "-"
-cost = 24
-helptext = _("Obsoletes Boat.")
 
 [advance_amphibious_warfare]
 name     = _("Amphibious Warfare")
@@ -139,7 +137,6 @@ req2     = "Tactics"
 flags    = ""
 graphic     = "a.amphibious_warfare"
 graphic_alt = "-"
-cost = 3280
 
 [advance_astronomy]
 name     = _("Astronomy")
@@ -148,7 +145,6 @@ req2     = "Mathematics"
 flags    = ""
 graphic     = "a.astronomy"
 graphic_alt = "-"
-cost = 146
 
 [advance_atomic_theory]
 name     = _("Atomic Theory")
@@ -157,7 +153,6 @@ req2     = "Physics"
 flags    = ""
 graphic     = "a.atomic_theory"
 graphic_alt = "-"
-cost = 1080
 
 [advance_automobile]
 name     = _("Automobile")
@@ -165,18 +160,7 @@ req1     = "Combustion"
 req2     = "Steel"
 graphic     = "a.automobile"
 graphic_alt = "-"
-helptext = _("Obsoletes Leonardos Workshop, Colossus. +25% population pollution.")
-cost = 4230
-
-[advance_avionics]
-name     = _("Avionics")
-req1     = "Computers"
-req2     = "Rocketry"
-flags    = ""
-graphic     = "a.avionics"
-graphic_alt = "-"
-helptext = _("Obsoletes Dive Bomber, prior Fighters")
-cost = 7250
+helptext = _("Increases the population's contribution to pollution.")
 
 [advance_banking]
 name     = _("Banking")
@@ -185,8 +169,6 @@ req2     = "The Republic"
 flags    = ""
 graphic     = "a.banking"
 graphic_alt = "-"
-helptext = _("Infantry upkeep: 1 gold. Blocks Philosophy bonus. Globally expires capital trade route bonus.")
-cost = 364
 
 [advance_bridge_building]
 name     = _("Bridge Building")
@@ -195,7 +177,7 @@ req2     = "Construction"
 flags    = "Bridge"
 graphic     = "a.bridge_building"
 graphic_alt = "-"
-helptext = _("Allows roads on rivers.")
+helptext = _("Allows roads to be built on river tiles.")
 
 [advance_bronze_working]
 name     = _("Bronze Working")
@@ -204,7 +186,6 @@ req2     = "None"
 flags    = ""
 graphic     = "a.bronze_working"
 graphic_alt = "-"
-cost = 24
 
 [advance_ceremonial_burial]
 name     = _("Ceremonial Burial")
@@ -213,7 +194,6 @@ req2     = "None"
 flags    = ""
 graphic     = "a.ceremonial_burial"
 graphic_alt = "-"
-cost = 24
 
 [advance_chemistry]
 name     = _("Chemistry")
@@ -222,7 +202,6 @@ req2     = "Medicine"
 flags    = ""
 graphic     = "a.chemistry"
 graphic_alt = "-"
-cost = 800
 
 [advance_chivalry]
 name     = _("Chivalry")
@@ -231,8 +210,6 @@ req2     = "Horseback Riding"
 flags    = ""
 graphic     = "a.chivalry"
 graphic_alt = "-"
-helptext = _("Obsoletes Horsemen, Chariots.")
-cost = 226
 
 [advance_code_of_laws]
 name     = _("Code of Laws")
@@ -249,7 +226,6 @@ req2     = "Advanced Flight"
 flags    = ""
 graphic     = "a.combined_arms"
 graphic_alt = "-"
-cost = 5650
 
 [advance_combustion]
 name     = _("Combustion")
@@ -258,8 +234,6 @@ req2     = "Explosives"
 flags    = ""
 graphic     = "a.combustion"
 graphic_alt = "-"
-helptext = _("Obsoletes Balloon. +1 move for Trains.")
-cost = 3810
 
 [advance_communism]
 name     = _("Communism")
@@ -268,7 +242,7 @@ req2     = "Industrialization"
 flags    = ""
 graphic     = "a.communism"
 graphic_alt = "-"
-helptext = _("Allows government Communism.")
+helptext = _("Reduces the effect of Cathedrals.")
 
 [advance_computers]
 name     = _("Computers")
@@ -277,8 +251,6 @@ req2     = "Miniaturization"
 flags    = ""
 graphic     = "a.computers"
 graphic_alt = "-"
-helptext = _("Obsoletes Temple of Artemis.")
-cost = 5650
 
 [advance_conscription]
 name     = _("Conscription")
@@ -287,8 +259,6 @@ req2     = "Metallurgy"
 flags    = ""
 graphic     = "a.conscription"
 graphic_alt = "-"
-helptext = _("Obsoletes Musketeers, Falconeers. Cities can build >1 unit. Old infantry convert to Musketeers.")
-cost = 1890
 
 [advance_construction]
 name     = _("Construction")
@@ -297,7 +267,10 @@ req2     = "Currency"
 flags    = ""
 graphic     = "a.construction"
 graphic_alt = "-"
-helptext = _("Allows Fortresses, Oil Wells.")
+helptext = _("\
+Allows Settlers, Workers and Engineers to build fortresses, and to \
+build oil wells on Desert tiles.\
+")
 
 [advance_currency]
 name     = _("Currency")
@@ -314,8 +287,6 @@ req2     = "Invention"
 flags    = ""
 graphic     = "a.democracy"
 graphic_alt = "-"
-helptext = _("Obsoletes Code of Hammurabi. Allows government Democracy.")
-cost = 875
 
 [advance_economics]
 name     = _("Economics")
@@ -324,7 +295,6 @@ req2     = "University"
 flags    = ""
 graphic     = "a.economics"
 graphic_alt = "-"
-cost = 875
 
 [advance_electricity]
 name     = _("Electricity")
@@ -333,8 +303,7 @@ req2     = "Magnetism"
 flags    = ""
 graphic     = "a.electricity"
 graphic_alt = "-"
-helptext = _("Obsoletes Ironclad. +1 Effect for Amphitheaters. +1 move for Trains.")
-cost = 2220
+helptext = _("Improves the effect of Amphitheaters.")
 
 [advance_electronics]
 name     = _("Electronics")
@@ -343,7 +312,6 @@ req2     = "Electricity"
 flags    = ""
 graphic     = "a.electronics"
 graphic_alt = "-"
-cost = 3630
 
 [advance_engineering]
 name     = _("Engineering")
@@ -352,7 +320,6 @@ req2     = "Construction"
 flags    = ""
 graphic     = "a.engineering"
 graphic_alt = "-"
-helptext = _("Allows Canals and Naval Bases.")
 
 [advance_environmentalism]
 name     = _("Environmentalism")
@@ -361,8 +328,8 @@ req2     = "Space Flight"
 flags    = ""
 graphic     = "a.environmentalism"
 graphic_alt = "-"
-helptext = _("Reduces pollution from population by half.")
-cost = 8040
+helptext = _("Having this advance decreases pollution\
+ in all your cities by 50%.")
 
 [advance_espionage]
 name     = _("Espionage")
@@ -371,8 +338,6 @@ req2     = "Democracy"
 flags    = ""
 graphic     = "a.espionage"
 graphic_alt = "-"
-helptext = _("Obsoletes Diplomat.")
-cost = 2900
 
 [advance_explosives]
 name     = _("Explosives")
@@ -381,8 +346,6 @@ req2     = "Chemistry"
 flags    = ""
 graphic     = "a.explosives"
 graphic_alt = "-"
-helptext = _("Obsoletes Workers.")
-cost = 1560
 
 [advance_feudalism]
 name     = _("Feudalism")
@@ -391,9 +354,6 @@ req2     = "Monarchy"
 flags    = ""
 graphic     = "a.feudalism"
 graphic_alt = "-"
-cost = 146
-helptext = _("Allows Castles (with Construction).")
-
 
 [advance_flight]
 name     = _("Flight")
@@ -402,37 +362,30 @@ req2     = "Theory of Gravity"
 flags    = "Build_Airborne"
 graphic     = "a.flight"
 graphic_alt = "-"
-helptext = _("Traderoutes give less first time revenue.")
-cost = 4680
 
-[advance_theocracy]
-name     = _("Theocracy")
+[advance_fundamentalism]
+name     = _("Fundamentalism")
 req1     = "Theology"
-req2     = "None"
+req2     = "Conscription"
 flags    = ""
-graphic     = "a.theocracy"
+graphic     = "a.fundamentalism"
 graphic_alt = "-"
-helptext = _("Obsoletes Pax Dei. Allows government Theocracy.")
-cost = 725
 
 [advance_fusion_power]
 name     = _("Fusion Power")
-req1     = "Superconductors"
-req2     = "None"
+req1     = "Nuclear Power"
+req2     = "Superconductors"
 flags    = ""
 graphic     = "a.fusion_power"
 graphic_alt = "-"
-helptext = _("Obsoletes Medici Bank.")
-cost = 8040
 
-[advance_microbiology]
-name     = _("Microbiology")
+[advance_genetic_engineering]
+name     = _("Genetic Engineering")
 req1     = "Medicine"
 req2     = "The Corporation"
 flags    = ""
-graphic     = "a.microbiology"
+graphic     = "a.genetic_engineering"
 graphic_alt = "-"
-cost = 3150
 
 [advance_guerilla_warfare]
 name     = _("Guerilla Warfare")
@@ -441,8 +394,6 @@ req2     = "Tactics"
 flags    = ""
 graphic     = "a.guerilla_warfare"
 graphic_alt = "-"
-helptext = _("Obsoletes Explorer. Globally unlocks defensive partisans.")
-cost = 3985
 
 [advance_gunpowder]
 name     = _("Gunpowder")
@@ -451,8 +402,6 @@ req2     = "Iron Working"
 flags    = ""
 graphic     = "a.gunpowder"
 graphic_alt = "-"
-cost = 800
-helptext = _("Obsoletes Castle, Agōgē of Sparta, Barracks, earlier foot soldiers.")
 
 [advance_horseback_riding]
 name     = _("Horseback Riding")
@@ -461,8 +410,6 @@ req2     = "None"
 flags    = ""
 graphic     = "a.horseback_riding"
 graphic_alt = "-"
-cost = 24
-helptext = _("Travellers spread news to the world if discovered before Turn 15.")
 
 [advance_industrialization]
 name     = _("Industrialization")
@@ -470,8 +417,7 @@ req1     = "Railroad"
 req2     = "Banking"
 graphic     = "a.industrialization"
 graphic_alt = "-"
-helptext = _("Obsoletes Galleon. Population begins polluting.")
-cost = 2330
+helptext = _("Population will start contributing to pollution.")
 
 [advance_invention]
 name     = _("Invention")
@@ -480,7 +426,7 @@ req2     = "Literacy"
 flags    = ""
 graphic     = "a.invention"
 graphic_alt = "-"
-helptext = _("Extra vision in Fortress, Naval Base, Castle. Blocks Philosophy bonus.")
+helptext = _("Increases units' vision when in fortresses.")
 
 [advance_iron_working]
 name     = _("Iron Working")
@@ -497,17 +443,14 @@ req2     = "Guerilla Warfare"
 flags    = ""
 graphic     = "a.labor_union"
 graphic_alt = "-"
-cost = 5430
-helptext = _("Musketeers can convert to Riflemen.")
 
 [advance_laser]
 name     = _("Laser")
-req1     = "Nuclear Power"
-req2     = "None"
+req1     = "Mass Production"
+req2     = "Nuclear Power"
 flags    = ""
 graphic     = "a.laser"
 graphic_alt = "-"
-cost = 5790
 
 [advance_leadership]
 name     = _("Leadership")
@@ -516,8 +459,6 @@ req2     = "Gunpowder"
 flags    = ""
 graphic     = "a.leadership"
 graphic_alt = "-"
-helptext = _("Obsoletes Horsemen, Chariot, Elephant, Knight, Crusader.")
-cost = 1250
 
 [advance_literacy]
 name     = _("Literacy")
@@ -534,20 +475,14 @@ req2     = "Tactics"
 flags    = ""
 graphic     = "a.machine_tools"
 graphic_alt = "-"
-helptext = _("Obsoletes Cannon. Globally obsoletes Great Wall.")
-cost = 3985
 
 [advance_magnetism]
 name     = _("Magnetism")
-;req1     = "Iron Working"
-;req2     = "Physics"
-req1     = "Navigation"
-req2     = "Invention"
+req1     = "Iron Working"
+req2     = "Physics"
 flags    = ""
 graphic     = "a.magnetism"
 graphic_alt = "-"
-helptext = _("Obsoletes Caravel.")
-cost = 875
 
 [advance_map_making]
 name     = _("Map Making")
@@ -556,8 +491,6 @@ req2     = "None"
 flags    = ""
 graphic     = "a.map_making"
 graphic_alt = "-"
-helptext = _("Scouts can move +2 tiles per turn")
-cost = 51
 
 [advance_masonry]
 name     = _("Masonry")
@@ -566,8 +499,6 @@ req2     = "None"
 flags    = ""
 graphic     = "a.masonry"
 graphic_alt = "-"
-helptext = _("Allows Forts.")
-cost = 24
 
 [advance_mass_production]
 name     = _("Mass Production")
@@ -575,8 +506,7 @@ req1     = "Automobile"
 req2     = "The Corporation"
 graphic     = "a.mass_production"
 graphic_alt = "-"
-helptext = _("Obsoletes Goods. +25% population pollution.")
-cost = 4680
+helptext = _("Increases the population's contribution to pollution.")
 
 [advance_mathematics]
 name     = _("Mathematics")
@@ -593,7 +523,6 @@ req2     = "Trade"
 flags    = ""
 graphic     = "a.medicine"
 graphic_alt = "-"
-cost = 468
 
 [advance_metallurgy]
 name     = _("Metallurgy")
@@ -602,8 +531,6 @@ req2     = "University"
 flags    = ""
 graphic     = "a.metallurgy"
 graphic_alt = "-"
-helptext = _("Obsoletes Catapult, all Siege Rams. City Walls cost +10.")
-cost = 1340
 
 [advance_miniaturization]
 name     = _("Miniaturization")
@@ -612,8 +539,6 @@ req2     = "Electronics"
 flags    = ""
 graphic     = "a.miniaturization"
 graphic_alt = "-"
-helptext = _("Obsoletes Lighthouse.")
-cost = 4490
 
 [advance_mobile_warfare]
 name     = _("Mobile Warfare")
@@ -622,8 +547,6 @@ req2     = "Tactics"
 flags    = ""
 graphic     = "a.mobile_warfare"
 graphic_alt = "-"
-helptext = _("Obsoletes Barracks II, Cavalry, Sun Tzu, Genghis Khan.")
-cost = 5120
 
 [advance_monarchy]
 name     = _("Monarchy")
@@ -632,7 +555,6 @@ req2     = "Code of Laws"
 flags    = ""
 graphic     = "a.monarchy"
 graphic_alt = "-"
-helptext = _("Obsoletes Chand Baori, Ziggurat. Allows government Monarchy.")
 
 [advance_monotheism]
 name     = _("Monotheism")
@@ -640,9 +562,7 @@ req1     = "Philosophy"
 req2     = "Polytheism"
 flags    = ""
 graphic     = "a.monotheism"
-helptext = _("Obsoletes Elephants.")
 graphic_alt = "-"
-cost = 384
 
 [advance_mysticism]
 name     = _("Mysticism")
@@ -651,7 +571,7 @@ req2     = "None"
 flags    = ""
 graphic     = "a.mysticism"
 graphic_alt = "-"
-helptext = _("Doubles the effect of Temples.")
+helptext = _("Improves the effect of Temples.")
 
 [advance_navigation]
 name     = _("Navigation")
@@ -660,8 +580,6 @@ req2     = "Astronomy"
 flags    = ""
 graphic     = "a.navigation"
 graphic_alt = "-"
-helptext = _("Obsoletes Galley, Longboat, War Galley, Ram Ship.")
-cost = 486
 
 [advance_nuclear_fission]
 name     = _("Nuclear Fission")
@@ -670,7 +588,6 @@ req2     = "Atomic Theory"
 flags    = ""
 graphic     = "a.nuclear_fission"
 graphic_alt = "-"
-cost = 5300
 
 [advance_nuclear_power]
 name     = _("Nuclear Power")
@@ -679,8 +596,7 @@ req2     = "Electronics"
 flags    = ""
 graphic     = "a.nuclear_power"
 graphic_alt = "-"
-helptext = _("+2 moves for Sea units.")
-cost = 5650
+helptext = _("Gives sea units one extra move.")
 
 [advance_philosophy]
 name     = _("Philosophy")
@@ -689,8 +605,8 @@ req2     = "Literacy"
 flags    = ""
 graphic     = "a.philosophy"
 graphic_alt = "-"
-helptext = _("Obsoletes Sphinx. Bonus tech before 1600AD if no next tier techs are possessed.")
-cost = 276
+helptext = _("When you research this technology, you\
+ also get one other immediate technology advance.")
 
 [advance_physics]
 name     = _("Physics")
@@ -699,16 +615,14 @@ req2     = "Navigation"
 flags    = ""
 graphic     = "a.physics"
 graphic_alt = "-"
-helptext = _("Increases unit vision. Prevents Philosophy bonus.")
 
 [advance_plastics]
 name     = _("Plastics")
-req1     = "Space Flight"
-req2     = "Robotics"
+req1     = "Refining"
+req2     = "Space Flight"
 graphic     = "a.plastics"
 graphic_alt = "-"
-helptext = _("Obsoletes Armor. +25% population pollution.")
-cost = 7860
+helptext = _("Increases the population's contribution to pollution.")
 
 [advance_polytheism]
 name     = _("Polytheism")
@@ -725,28 +639,15 @@ req2     = "None"
 flags    = ""
 graphic     = "a.pottery"
 graphic_alt = "-"
-helptext = _("Allows Quays.")
-cost = 24
-
-[advance_radar]
-name     = _("Radar")
-req1     = "Electronics"
-req2     = "Advanced Flight"
-flags    = ""
-graphic     = "a.radar"
-graphic_alt = "-"
-helptext = _("Allows building Radar on Airbases.")
-cost = 6630
 
 [advance_radio]
 name     = _("Radio")
 req1     = "Flight"
-req2     = "None"
+req2     = "Electricity"
 flags    = ""
 graphic     = "a.radio"
 graphic_alt = "-"
-helptext = _("Obsoletes Mausoleum. Allows Airbase, Buoy.")
-cost = 5120
+helptext = _("Allows Workers and Engineers to build airbases and buoys.")
 
 [advance_railroad]
 name     = _("?tech:Railroad")
@@ -755,29 +656,29 @@ req2     = "Bridge Building"
 flags    = ""
 graphic     = "a.railroad"
 graphic_alt = "-"
-helptext = _("Allows Railroads. Obsoletes Appian Way. Traderoutes less first time revenue. ")
-cost = 1820
+helptext = _("\
+Allows Settlers, Workers and Engineers to upgrade roads to railroads.\
+")
 
 [advance_recycling]
 name     = _("Recycling")
 req1     = "Mass Production"
-req2     = "None"
-;req2     = "Democracy" ; The chance you get to Recycling without knowing Democracy is about 0.001%, so, just clean up the line mess
+req2     = "Democracy"
 flags    = ""
 graphic     = "a.recycling"
 graphic_alt = "-"
-cost = 4460
-helptext = _("Unit upgrades cost 20% less.")
 
 [advance_refining]
 name     = _("Refining")
 req1     = "Chemistry"
-req2     = "Steel"
+req2     = "The Corporation"
 flags    = ""
 graphic     = "a.refining"
 graphic_alt = "-"
-helptext = _("Allows Arctic Oil Wells. Oil Wells on Oil get +1 shield.")
-cost = 3630
+helptext = _("\
+Allows Settlers, Workers and Engineers to build oil wells on \
+Glacier tiles.\
+")
 
 [advance_refrigeration]
 name     = _("Refrigeration")
@@ -786,8 +687,10 @@ req2     = "Electricity"
 flags    = ""
 graphic     = "a.refrigeration"
 graphic_alt = "-"
-helptext = _("Allows Farmland.")
-cost = 2775
+helptext = _("\
+Allows Settlers, Workers and Engineers to upgrade irrigation systems \
+to farmland.\
+")
 
 [advance_robotics]
 name     = _("Robotics")
@@ -796,18 +699,14 @@ req2     = "Computers"
 flags    = ""
 graphic     = "a.robotics"
 graphic_alt = "-"
-helptext = _("Obsoletes Artillery, King Richards Crusade.")
-cost = 7250
 
 [advance_rocketry]
 name     = _("Rocketry")
-req1     = "Radar"
-req2     = "Miniaturization"
+req1     = "Advanced Flight"
+req2     = "Electronics"
 flags    = ""
 graphic     = "a.rocketry"
 graphic_alt = "-"
-helptext = _("Obsoletes Destroyer, Cruiser.")
-cost = 7040
 
 [advance_sanitation]
 name     = _("Sanitation")
@@ -816,7 +715,6 @@ req2     = "Medicine"
 flags    = ""
 graphic     = "a.sanitation"
 graphic_alt = "-"
-cost = 950
 
 [advance_seafaring]
 name     = _("Seafaring")
@@ -824,7 +722,6 @@ req1     = "Pottery"
 req2     = "Map Making"
 flags    = ""
 graphic     = "a.seafaring"
-helptext = _("Obsoletes Trireme.")
 graphic_alt = "-"
 
 [advance_space_flight]
@@ -834,29 +731,22 @@ req2     = "Rocketry"
 flags    = ""
 graphic     = "a.space_flight"
 graphic_alt = "-"
-helptext = _("Obsoletes earlier Bombers.")
-cost = 7680
 
 [advance_stealth]
 name     = _("Stealth")
 req1     = "Superconductors"
-req2     = "Avionics"
+req2     = "Advanced Flight"
 flags    = ""
 graphic     = "a.stealth"
 graphic_alt = "-"
-cost = 11920
 
 [advance_steam_engine]
 name     = _("Steam Engine")
-;req1     = "Physics"
-;req2     = "Invention" >> "University"
 req1     = "Physics"
-req2     = "Magnetism"
+req2     = "Invention"
 flags    = ""
 graphic     = "a.steam_engine"
 graphic_alt = "-"
-helptext = _("Obsoletes Frigate, Hanging Gardens. Ends Colossus discount on Commerce units.")
-cost = 1240
 
 [advance_steel]
 name     = _("Steel")
@@ -865,18 +755,14 @@ req2     = "Industrialization"
 flags    = ""
 graphic     = "a.steel"
 graphic_alt = "-"
-helptext = _("Allows Sea Bridge, Bunker.")
-cost = 3280
 
 [advance_superconductors]
 name     = _("Superconductors")
-req1     = "Laser"
-req2     = "Space Flight"
+req1     = "Nuclear Power"
+req2     = "Laser"
 flags    = ""
 graphic     = "a.superconductors"
 graphic_alt = "-"
-cost = 7750
-helptext = _("Allows MagLev.")
 
 [advance_tactics]
 name     = _("Tactics")
@@ -885,8 +771,6 @@ req2     = "Leadership"
 flags    = ""
 graphic     = "a.tactics"
 graphic_alt = "-"
-helptext = _("Obsoletes Dragoons, Statue of Zeus.")
-cost = 2530
 
 [advance_the_corporation]
 name     = _("The Corporation")
@@ -895,8 +779,6 @@ req2     = "Industrialization"
 flags    = ""
 graphic     = "a.the_corporation"
 graphic_alt = "-"
-helptext = _("Obsoletes Caravan, Wagon. +25% Coinage for Stock Exchange")
-cost = 2900
 
 [advance_the_republic]
 name     = _("The Republic")
@@ -905,7 +787,6 @@ req2     = "Literacy"
 flags    = ""
 graphic     = "a.the_republic"
 graphic_alt = "-"
-helptext = _("Allows government Republic.")
 
 [advance_the_wheel]
 name     = _("The Wheel")
@@ -922,8 +803,7 @@ req2     = "Monotheism"
 flags    = ""
 graphic     = "a.theology"
 graphic_alt = "-"
-helptext = _("Obsoletes Oracle. +1 Effect on Cathedral, Michelangelos Chapel.")
-cost = 600
+helptext = _("Improves the effect of Cathedrals.")
 
 [advance_theory_of_gravity]
 name     = _("Theory of Gravity")
@@ -932,7 +812,6 @@ req2     = "University"
 flags    = ""
 graphic     = "a.theory_of_gravity"
 graphic_alt = "-"
-cost = 585
 
 [advance_trade]
 name     = _("Trade")
@@ -949,7 +828,6 @@ req2     = "Philosophy"
 flags    = ""
 graphic     = "a.university"
 graphic_alt = "-"
-cost = 415
 
 [advance_warrior_code]
 name     = _("Warrior Code")
@@ -958,8 +836,6 @@ req2     = "None"
 flags    = ""
 graphic     = "a.warrior_code"
 graphic_alt = "-"
-cost = 24
-helptext = _("Foot soldiers may make Hideouts, if enabled.")
 
 [advance_writing]
 name     = _("Writing")
@@ -969,30 +845,10 @@ flags    = ""
 graphic     = "a.writing"
 graphic_alt = "-"
 
-[advance_nationalism]
-name     = _("Nationalism")
-req1     = "The Corporation"
-req2     = "Communism"
-flags    = ""
-graphic     = "a.nationalism"
-graphic_alt = "-"
-helptext = _("Allows government Nationalism.")
-cost = 2775
-
-;[advance_agricultural]
-;name     = _("Agricultural")
-;req1     = "None"
-;req2     = "None"
-;flags    = ""
-;graphic     = "a.horseback_riding"
-;graphic_alt = "-"
-
-
 ; A placeholder tech used to ensure that when
 ; a game is reloaded, a player can`t rebuild
 ; the "Darwin's Voyage" small wonder and get
 ; two free advances again.
-; THIS RULESET DOES NOT USE OLD DARWIN'S VOYAGE BEHAVIOUR OR THEORY OF EVOLUTION.
 [advance_theory_of_evolution]
 name     = _("Theory of Evolution")
 req1     = "None"
@@ -1001,4 +857,5 @@ root_req = "Theory of Evolution"
 flags    = ""
 graphic  = "b.darwins_voyage"
 graphic_alt = "-"
-helptext = _("This technology is not researchable and has no effect.")
+helptext = _("This technology is only acquired the first\
+ time you build Darwin's Voyage.")
