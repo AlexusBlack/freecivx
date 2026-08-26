@@ -1617,8 +1617,6 @@ nations = [
   'namibian',
   'nauruan',
   'navajo',
-  'nazi',
-  'is',
   'neapolitan',
   'nenets',
   'nepali',
