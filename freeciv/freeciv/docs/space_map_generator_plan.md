@@ -20,13 +20,18 @@ precedent for a non-Earth ruleset).
 
 | Ring | Radius band | Terrain analogue | Contents |
 |------|-------------|------------------|----------|
-| Core | centre | `Star` | 1–3 stars |
+| Core | centre | `Star` (own art, §13) | 1–3 stars |
 | Inner | inner band | Grassland (most irrigable) | 0–3 molten / toxic planets, **no moons** |
 | Middle | middle band | Plains (less irrigable) | 0–3 rocky planets, each with 1–3 rocky moons |
-| Outer | outer band | Tundra (least irrigable) | 0–2 gas giants (3–8 moons each), 0–2 ice planets (0–2 moons each) |
+| Outer | outer band | **Arctic** (least irrigable) | 0–2 gas giants (3–8 moons each), 0–2 ice planets (0–2 moons each) |
 | Belts | 1–3 annuli, **any ring** | Hills | asteroid belts |
-| Kuiper | outermost annulus, optional | Mountains | Kuiper belt |
+| Kuiper | outermost annulus, optional | **Forest** | Kuiper belt |
 | — | outside | Ocean class | interstellar space, **no resources** |
+
+> The terrain analogue column names the **tileset art** each ring borrows, not a
+> ruleset terrain — the ruleset terrains are in §3.1 and the art binding is §13.
+> Outer was Tundra and Kuiper was Mountains in the first draft; both were
+> changed once the actual art was inspected (§13.1).
 
 Systems are separated by **5–15 interstellar tiles**.
 
@@ -136,9 +141,9 @@ the map and there is no risk of stray resources appearing in interstellar space.
 | `Star` | Land | `TER_NOT_GENERATED`, **not** `TER_STARTER` | unworkable or high-shield centre |
 | `Inner System` | Land | high food, `TER_STARTER`, `TER_NOT_GENERATED` | grassland analogue |
 | `Middle System` | Land | medium output, `TER_STARTER`, `TER_NOT_GENERATED` | plains analogue |
-| `Outer System` | Land | low output, `TER_STARTER`, `TER_NOT_GENERATED` | tundra analogue |
-| `Asteroid Belt` | Land | mine-able, low food, `TER_NOT_GENERATED` | hills analogue |
-| `Kuiper Belt` | Land | mine-able, `TER_NOT_GENERATED` | mountains analogue |
+| `Outer System` | Land | low output, `TER_STARTER`, `TER_NOT_GENERATED` | arctic art |
+| `Asteroid Belt` | Land | mine-able, low food, `TER_NOT_GENERATED` | hills art |
+| `Kuiper Belt` | Land | mine-able, `TER_NOT_GENERATED` | forest art |
 | `Near Space` | Oceanic | `property_ocean_depth = 0`, `TER_NOT_GENERATED` | halo around systems |
 | `Interstellar Space` | Oceanic | `property_ocean_depth = 80`, `TER_NOT_GENERATED`, empty `resources` | deep space |
 | *(Earth-like set)* | mixed | normal `property_*`, **no** `TER_NOT_GENERATED` | see below |
@@ -791,3 +796,201 @@ different mapseed or abort with a clear message.
 | Lake regeneration (inert without freshwater) | `server/generator/mapgen_utils.c:350` |
 | Start positions (bypassed) | `server/generator/startpos.c:300` |
 | `destroy_tmap` non-NULL assert | `server/generator/temperature_map.c:105` |
+| Terrain art section lookup | `client/tilespec.c:4138` |
+| Terrain sprite names built from section tag | `client/tilespec.c:4165, 4184, 4230` |
+| `[tile_*]` section tag → `draw->name` | `client/tilespec.c:2344` |
+| Extra style lookup (graphic_str → graphic_alt) | `client/tilespec.c:3870-3875` |
+
+---
+
+## 13. Tileset dataset — art binding
+
+The space tileset (`freeciv/tilesets/space`, its own repo, wired in as a
+submodule) is a modified amplio2. It is 2.6-era art carrying amplio2's tag
+names, so nothing in it is named after a space concept — but the **art itself
+is already space art**. This section binds the two together.
+
+### 13.1 Confirmed art inventory
+
+Every cell below was visually inspected in `space/terrain1.png`, not inferred
+from its tag name.
+
+**Ring terrains** (column 0 of `terrain1.spec`; all are starfield diamonds
+differing in tint):
+
+| Ring terrain | Borrows art of | Cell | Appearance |
+|---|---|---|---|
+| `Inner System` | grassland | 2,0 | light grey starfield |
+| `Middle System` | plains | 1,0 | mid grey starfield |
+| `Outer System` | **arctic** | 7,0 | deep blue starfield — reads as cold, which is why arctic beat tundra |
+| `Asteroid Belt` | hills | 4,0 + `hills.spec` | dark starfield + layer-1 relief |
+| `Kuiper Belt` | **forest** | 3,0 + `terrain2.spec` | dark starfield + layer-1 clutter |
+| `Star` | *(its own cell)* | **10,0** | glowing yellow star — currently mis-tagged `t.l0.inaccessible1` |
+| `Near Space` | coast | `water.spec` | — |
+| `Interstellar Space` | floor (deep ocean) | `water.spec` | — |
+
+`Star` is the one terrain whose art is already bespoke: cell 10,0, directly
+below jungle, is a drawn star that amplio2 uses for "inaccessible".
+
+**Celestial bodies** — nine resource cells, all confirmed to depict what the
+mapping claims, and already drawn at two scales so planets read larger than
+moons:
+
+| Body | Art tag | Cell | Appearance |
+|---|---|---|---|
+| Molten Planet | `ts.furs` | 5,4 | large orange-red molten globe |
+| Molten Moon | `ts.peat` | 7,2 | small dark red globe |
+| Toxic Planet | `ts.arctic_ivory` | 6,2 | large yellow-green globe |
+| Toxic Moon | `ts.silk` | 2,4 | small green globe |
+| Rocky Planet | `ts.wine` | 3,4 | large brown-orange globe |
+| Rocky Moon | `ts.spice` | 7,4 | small tan globe |
+| Gas Giant | `ts.whales` | 9,4 | large purple **ringed** giant |
+| Ice Planet | `ts.buffalo` | 1,2 | large blue-white ice globe |
+| Ice Moon | `ts.grassland_resources` | 11,4 | small pale blue-white globe |
+
+Note `ts.grassland_resources` shares cell 11,4 with `ts.river_resources`; in
+Earth tilesets this is the "Resources" shield special, hence its shorthand name.
+
+### 13.2 The key mechanism: `graphic_alt` costs us nothing
+
+Terrain art is **not** looked up sprite-by-sprite. `tileset_setup_tile_type()`
+(`client/tilespec.c:4138`) resolves a terrain to one `[tile_*]` section by
+trying `graphic_str` then `graphic_alt`; and every sprite name is then built
+from **that section's own `tag`** — `draw->name` (`tilespec.c:2344`, used at
+`4165`/`4184`/`4230`). Extras resolve the same way, for both the sprite and the
+`[extras] styles` entry (`tilespec.c:3870-3875`).
+
+The consequence is the central result of this analysis:
+
+> A space terrain declared as
+> `graphic = "inner_system"`, `graphic_alt = "grassland"`
+> falls through to `[tile_grassland]` and renders with the full existing
+> grassland art — **all 16 match variants, blend sprites and cell sprites
+> included** — with **zero changes to the tileset**. The day custom art is
+> drawn, adding a `[tile_inner_system]` section plus `t.l0.inner_system1`
+> switches it over, with **no ruleset edit**.
+
+So the two obvious approaches are both wrong, and there is a better third:
+
+| Approach | Verdict |
+|---|---|
+| Ruleset says `graphic = "grassland"` | Works today, but the ruleset is permanently married to amplio tag names and custom art later means editing the ruleset |
+| Duplicate every tag as an alias in the specs | Unnecessary — would mean ~16–32 alias lines per terrain, and §13.2 shows none are read |
+| **`graphic` = real name, `graphic_alt` = amplio name** | **Chosen.** Correct names now, zero tileset work now, custom art later is purely additive |
+
+### 13.3 Required dataset changes
+
+Almost everything is ruleset-side. The tileset needs **one** substantive edit.
+
+**Tileset (`freeciv-space-tileset` repo) — required:**
+
+1. `space/terrain1.spec` cell 10,0 — add `t.l0.star1` alongside the existing
+   `t.l0.inaccessible1` (`duplicates_ok` is already on):
+   ```
+   10,  0, "t.l0.inaccessible1",
+           "t.l0.star1"          ; the art here is a star, not "inaccessible"
+   ```
+2. `space.tilespec` — add the matching section:
+   ```
+   [tile_star]
+   tag = "star"
+   blend_layer = 0
+   num_layers = 1
+   layer0_match_type = "land"
+   ```
+
+   This is the only terrain needing it, because it is the only one whose art
+   is not already reachable through an amplio section name.
+
+**Tileset — optional, and not needed by the generator:**
+
+3. The 87 out-of-bounds sprite cells catalogued in §13.5. None block this work.
+
+**Ruleset (`data/space/`) — the real work:**
+
+4. Eight terrains per §3.1, each with `graphic` = its own name and
+   `graphic_alt` = the amplio name from §13.1.
+5. Nine resources per §3.2, each as the usual `[resource_x]` + `[extra_x]`
+   pair, with `graphic` = e.g. `"ts.molten_planet"` and `graphic_alt` = the
+   amplio tag from §13.1. All nine fallback tags are already present in the
+   `[extras] styles` list, so the style lookup at `tilespec.c:3871` resolves.
+
+### 13.4 What this buys, and what it does not
+
+Rendering works from day one and every name in the ruleset is a real space
+name. Two consequences to be aware of:
+
+* **The ring terrains are near-identical, deliberately.** Inner/Middle/Outer
+  differ only in tint. This is **not** a defect to be fixed before playtesting
+  (OQ12, resolved *no*): a colourful map is explicitly not wanted, and the
+  structure a player needs to read is carried by the two belt annuli — whose
+  hills and forest layer-1 relief overlays the flat ring tints — plus the
+  planet and moon sprites. The muted ring tints are the background those read
+  against. Should this prove wrong in play, §13.2 means per-ring art can be
+  added later without touching the ruleset.
+* **Belts have no bodies yet.** §3.2 gives Asteroid and Kuiper belts no
+  resources and §10 asserts they have none. That holds for v1; mineable belts
+  are a later stage (OQ9), and the ore art for them already exists (§13.5).
+
+### 13.5 Spare art already in the sheet
+
+Inspecting the unused resource cells turned up more purpose-drawn space art
+than the nine bodies need — worth knowing before anyone commissions new art:
+
+| Art tag(s) | Depicts | Status |
+|---|---|---|
+| `ts.oil`, `ts.arctic_oil` | **black hole with accretion disc** (two copies) | **Reserved** — alternative system centre, later stage (OQ11) |
+| `ts.gold`, `ts.iron`, `ts.coal`, `ts.gems` | ore and mineral icons (amplio leftovers) | **Reserved** — mineable belt resources, later stage (OQ9) |
+| `ts.oasis`, `ts.wheat` | **habitable blue-green planets** | **Reserved** — Terran planet, distant future (OQ10) |
+| `ts.fish` | a second, smaller **star** | Unassigned — binary companion in a multi-star core |
+| `ts.pheasant`, `ts.fruit` | green-brown and teal planets | Unassigned — further planet classes |
+| `ts.seals` | purple **nebula** wisp | Unassigned — nebula tiles or a decorative extra |
+| `ts.horses` | white crystalline shards | Unassigned — comet / ice fragment |
+| `ts.tundra_game`, `ts.forest_game` | amplio creature art | Free; not space art |
+| `ts.rubber`, `ts.boar`, `ts.berries` | **blank cells** | Free — three empty slots for new art |
+
+Because three of these are reserved for planned features, the sheet should not
+be repacked in a way that loses those cells.
+
+### 13.6 Pre-existing out-of-bounds sprite cells
+
+The tileset pairs freeciv-web spec files with narrower amplio-sized art, so 87
+declared cells point outside their PNG. The client only complains when a
+ruleset actually requests one (which is how `unit.action_decision_want` was
+found), so these are latent, not active:
+
+| Spec | Image | Out-of-bounds cells |
+|---|---|---|
+| `terrain2.spec` | 960x295 | 32 — all `t.l1.desert_*` and `t.l1.swamp_*` |
+| `tiles.spec` | 1165x344 | 30 — `city.t_trade_A..L`, `unit.hp_95..5`, `unit.stack2..9` |
+| `terrain1.spec` | 960x785 | 9 — every `road.bridge_*` (row 16) |
+| `bases.spec` | 863x147 | 7 — radar, quay, castle, castle2, bunker (row 2) |
+| `grid.spec` | 583x148 | 5 — usermark, userarea, userspot, pollute (row 3) |
+| `cities.spec` | 1068x731 | 4 — coastal and fortification overlays (row 10) |
+
+Relevant to this plan:
+
+* **Safe.** Forest, hills, mountains and jungle all have complete, in-bounds
+  16-variant match sets, so Asteroid Belt and Kuiper Belt art works.
+  `water.spec` is entirely clean once its per-`[grid_*]` cell geometry is
+  accounted for.
+* **Latent risk.** `t.l1.desert_*` and `t.l1.swamp_*` are missing, so the
+  space ruleset must not give any terrain `graphic_alt = "desert"` or
+  `"swamp"` — those two amplio sections would fatal. None of the §13.1
+  bindings use them.
+* `city.t_trade_A..L` will fatal on any ruleset that produces ≥10 trade on a
+  tile. Worth fixing before the ruleset's output values are tuned.
+
+---
+
+## 14. Questions raised by the dataset pass — all resolved
+
+None of these block v1. Three are deferred features whose art already exists,
+so the sheet should not be reorganised in a way that loses those cells.
+
+| # | Question | Decision |
+|---|---|---|
+| 9 | Should Asteroid / Kuiper belts carry mineable resources? | **Yes, later stage.** Not in v1: §3.2 keeps belts resource-free and §10 keeps asserting it. When it lands, use the existing `ts.gold` / `ts.iron` / `ts.coal` / `ts.gems` art and give the "mine-able" flag in §3.1 something to act on |
+| 10 | Is a habitable planet a body class? | **Maybe, distant future.** `ts.oasis` / `ts.wheat` stay reserved for it. Would need a ring assignment, a rarity rule and a `riches` interaction — worth doing only if expansion needs a headline prize |
+| 11 | Black hole — hazard, or just art? | **Later stage, as an alternative system centre.** `ts.oil` / `ts.arctic_oil` are the art. Implies its own terrain and a generator branch at Phase 3b, since a black-hole system would not have a `Star` core |
+| 12 | Do the three ring terrains need distinct art before playtesting? | **No.** The map is intentionally kept muted rather than colourful; the belts' hills and forest relief overlay the ring tints and, with the body sprites, carry all the structure a player needs to read. See §13.4 |

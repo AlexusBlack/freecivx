@@ -3841,7 +3841,13 @@ rulesets = [
   'sandbox',
   'civ1',
   'civ2',
-  'stub'
+  'stub',
+  # Space map ruleset. Note 'webciv', which this one derives from, is absent
+  # from this list on purpose upstream: it is only preloaded into the
+  # emscripten build (see the DATA_FILES list near the top of this file), so
+  # a native build has never installed it. 'space' is listed here because the
+  # native GTK build is how the map generator is tested.
+  'space'
   ]
 
 ruleset_files = [
@@ -3869,6 +3875,7 @@ install_data(
   'data/sandbox.modpack',
   'data/civ1.modpack',
   'data/civ2.modpack',
+  'data/space.modpack',
   install_dir : join_paths(get_option('datadir'), 'freeciv')
   )
 
@@ -3894,6 +3901,11 @@ install_data(
 install_data(
   'data/multiplayer/README.multiplayer',
   install_dir : join_paths(get_option('datadir'), 'freeciv/multiplayer')
+  )
+
+install_data(
+  'data/space/README.space',
+  install_dir : join_paths(get_option('datadir'), 'freeciv/space')
   )
 
 install_data(

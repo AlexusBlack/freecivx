@@ -182,9 +182,25 @@ if [ "${DO_INSTALL}" -eq 1 ] && [ -d "${TILESETS_DIR}" ]; then
     fi
     ln -sfn "${tsdir}/${tsname}.tilespec" \
             "${INSTALL_DIR}/share/freeciv/${tsname}.tilespec"
-    ln -sfn "${tsdir}/${tsname}" \
-            "${INSTALL_DIR}/share/freeciv/${tsname}"
-    echo "linked tileset '${tsname}' into ${INSTALL_DIR}/share/freeciv"
+    # The art directory is '<name>_tiles', not '<name>': a tileset and a
+    # ruleset may share a name - 'space' is both - and would then both want
+    # share/freeciv/<name>/. When they did, 'ninja install' wrote the
+    # ruleset's .ruleset files straight into the tileset's git working copy.
+    # The suffix keeps the two apart; '<name>' is still accepted for tilesets
+    # that predate the split.
+    if [ -d "${tsdir}/${tsname}_tiles" ]; then
+      tsart="${tsname}_tiles"
+    else
+      tsart="${tsname}"
+    fi
+    # A directory symlink left by an older run of this script would make
+    # 'ninja install' write into the submodule again; drop it.
+    if [ -L "${INSTALL_DIR}/share/freeciv/${tsname}" ]; then
+      rm -f "${INSTALL_DIR}/share/freeciv/${tsname}"
+    fi
+    ln -sfn "${tsdir}/${tsart}" \
+            "${INSTALL_DIR}/share/freeciv/${tsart}"
+    echo "linked tileset '${tsname}' (art: ${tsart}) into ${INSTALL_DIR}/share/freeciv"
   done
 fi
 

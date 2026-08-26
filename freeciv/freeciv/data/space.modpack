@@ -1,0 +1,19 @@
+
+; Without this file the ruleset loads fine with "rulesetdir space" on the
+; server console, but never appears in the client's pregame ruleset list:
+; that list is built from .modpack files carrying "components.ruleset = TRUE"
+; (common/modpack.c:112, get_modpacks_list()), not by scanning for ruleset
+; directories. The 'webciv' ruleset this one derives from has no .modpack
+; either, which is why it is invisible in the list too.
+
+[datafile]
+options = "+Freeciv-modpack-3.2-Devel-2021.Jun.01"
+
+[modpack]
+name = "space"
+
+[components]
+ruleset = TRUE
+
+[ruleset]
+rulesetdir = "space"
