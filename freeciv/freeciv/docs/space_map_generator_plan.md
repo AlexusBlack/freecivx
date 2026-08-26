@@ -356,7 +356,7 @@ per map**, so Sol's layout varies between games while its content does not.
 | 6 | 0.72 | random | `Gas Giant` | 5 (mixed) | 5 |
 | 7 | 0.80 | random | `Gas Giant` | 3 (mixed) | 5 |
 | 8 | 0.86 | random | `Gas Giant` | 1 (mixed) | 5 |
-| 9 | 0.90 | random | `Ice Planet` | 0 | 3 |
+| 9 | 0.90 | random | `Ice Planet` | 1 × `Ice Moon` | 4 |
 | 10 | 1.00 | — | **Kuiper Belt** (annulus, 80 % coverage) | — | — |
 
 #### Angle assignment
@@ -377,7 +377,7 @@ accept iff  d(a, b) >= required   for every already-placed body b
 
 `clearance` is the radius of tiles a body needs to itself: 5 for a gas giant
 (its moons fill the 8-neighbourhood and may spill to `sq_map_distance <= 4`),
-4 for a rocky planet, 3 for a moonless planet.
+4 for a planet with one or two moons, 3 for a moonless planet.
 
 For the rejection sampler, the equivalent angular floor on a shared orbit is
 useful as a sanity bound:
@@ -740,7 +740,7 @@ different mapseed or abort with a clear message.
   * `map_startpos_count() == player_count()`, every startpos on Sol's continent;
   * **Sol composition invariance**: generate at 5 different mapseeds, same size
     — the *multiset* of Sol's bodies (1 star, molten, toxic, 2 rocky with 1 and
-    2 moons, 3 gas giants with 5/3/1 moons, ice planet) and their orbital radii
+    2 moons, 3 gas giants with 5/3/1 moons, ice planet with 1 moon) and their orbital radii
     must be identical, while the angles differ. Layout equality is explicitly
     **not** asserted;
   * **Sol angular separation**: for every pair of Sol bodies, the chord distance
@@ -757,6 +757,8 @@ different mapseed or abort with a clear message.
 
 ## 11. Open questions — status
 
+All blocking questions are now resolved; the generator has no design gaps left.
+
 | # | Question | Status |
 |---|---|---|
 | 1 | Star as terrain vs. resource | **Terrain** (assumed; still worth a confirm) |
@@ -765,8 +767,9 @@ different mapseed or abort with a clear message.
 | 4 | Moon output | **Resolved: moons produce output by themselves** |
 | 5 | `riches` mapping | **Resolved:** body-density multiplier (§6.1) |
 | 6 | Hex topology | **Resolved: rejected**, square/iso-square only |
-| 7 | *(new)* Should Sol's ring terrain be richer than a procedural system's, or identical? | Open — affects whether leaving Sol is attractive |
-| 8 | *(new)* Sol's ice planet has 0 moons in the template; confirm | Open |
+| 7 | *(new)* Should Sol's ring terrain be richer than a procedural system's, or identical? | **Resolved: identical.** Sol has no terrain bonus; what makes it distinctive is its fixed, fully-populated body list, not richer ground. Expansion outward is therefore driven by the number of bodies a player can reach, not by any yield gradient |
+| 8 | *(new)* Sol's ice planet has 0 moons in the template; confirm | **Resolved: 1 × `Ice Moon`.** Template row 9 updated, clearance raised 3 → 4 |
+| 1b | *(restated)* Star passability | **Resolved: impassable.** `[terrain_star]` omits `native_to` entirely and carries `NoCities`, following `[terrain_inaccesible]`. A star is a hole in the middle of every system: it blocks movement, splits the inner ring into an arc rather than a loop, and cannot be worked — deliberate flavour and a real constraint on intra-system movement |
 
 ---
 

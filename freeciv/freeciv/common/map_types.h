@@ -49,7 +49,10 @@ enum map_generator {
   MAPGEN_FRACTAL,
   MAPGEN_ISLAND,
   MAPGEN_FAIR,
-  MAPGEN_FRACTURE
+  MAPGEN_FRACTURE,
+  /* Appended last on purpose: the value is stored in savegames and in the
+   * 'generator' setting, so inserting anywhere else would shift the others. */
+  MAPGEN_SPACE
 };
 
 enum map_startpos {

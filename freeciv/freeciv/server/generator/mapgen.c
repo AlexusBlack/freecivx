@@ -41,6 +41,7 @@
 #include "mapgen_topology.h"
 #include "mapgen_utils.h"
 #include "startpos.h"
+#include "space_map.h"
 #include "temperature_map.h"
 
 #include "mapgen.h"
@@ -1318,6 +1319,17 @@ bool map_fractal_generate(bool autosize, struct unit_type *initial_unit)
     /* create a temperature map */
     create_tmap(FALSE);
 
+    /* Before the height-map generators: the space generator never allocates
+     * a height map, so nothing downstream of it may call hmap(). See
+     * docs/space_map_generator_plan.md section 7.2. */
+    if (MAPGEN_SPACE == wld.map.server.generator
+        && !map_generate_space()) {
+      /* No sensible fallback. Falling back to ISLAND the way FAIR does below
+       * would silently hand the player an Earth map on a space ruleset, so
+       * fail instead and let srv_main.c retry with another mapseed. */
+      return FALSE;
+    }
+
     if (MAPGEN_FAIR == wld.map.server.generator
         && !map_generate_fair_islands()) {
       wld.map.server.generator = MAPGEN_ISLAND;
@@ -1372,17 +1384,30 @@ bool map_fractal_generate(bool autosize, struct unit_type *initial_unit)
       //free(height_map);
       //height_map = NULL;
     }
-    if (!wld.map.server.tinyisles) {
+    /* Skipped for SPACE: is_tiny_island() reads property[MG_FROZEN], which is
+     * 0 on every space terrain, and a heavily gapped belt can legitimately
+     * leave a one-tile island that must be kept. */
+    if (!wld.map.server.tinyisles
+        && MAPGEN_SPACE != wld.map.server.generator) {
       remove_tiny_islands();
     }
 
-    smooth_water_depth();
+    /* Both of these are skipped for SPACE, because both reach for a
+     * replacement terrain through a helper that filters TER_NOT_GENERATED:
+     * pick_ocean() (mapgen_utils.c:555) would swap the void for the
+     * ruleset's Earth ocean, and regenerate_lakes() would turn enclosed
+     * pockets of void into freshwater lakes. map_generate_space() paints its
+     * own near-system shallows instead. */
+    if (MAPGEN_SPACE != wld.map.server.generator) {
+      smooth_water_depth();
+    }
 
     /* Continent numbers must be assigned before regenerate_lakes() */
     assign_continent_numbers();
 
     /* Turn small oceans into lakes. */
-    if (wld.map.num_oceans > 0) {
+    if (wld.map.num_oceans > 0
+        && MAPGEN_SPACE != wld.map.server.generator) {
       regenerate_lakes();
     }
 
@@ -1417,6 +1442,13 @@ bool map_fractal_generate(bool autosize, struct unit_type *initial_unit)
       fc_assert_msg(FALSE,
                     "Fair island generator failed to allocated "
                     "start positions!");
+      break;
+    case MAPGEN_SPACE:
+      /* Unreachable: map_generate_space() always creates its own start
+       * positions, so map_startpos_count() is non-zero by the time we get
+       * here. Present for -Wswitch. */
+      fc_assert_msg(FALSE,
+                    "Space generator failed to allocate start positions!");
       break;
     case MAPGEN_SCENARIO:
     case MAPGEN_RANDOM:

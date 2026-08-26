@@ -731,17 +731,24 @@ names =
  _("?team name:Cream")
 
 [settings]
+; Changed from webciv: the space generator carves circles with
+; circle_dxyr_iterate(), which is only a circle on non-hex topologies - on hex
+; map_vector_to_sq_distance() squares the hex distance and the "systems" come
+; out as hexagons. It rejects hex outright, so the ruleset must not default to
+; it. ISO alone is fine and keeps the diamond-grid look.
+;
+; 'startpos' is left at DEFAULT because the generator ignores it: every player
+; starts in Sol. 'huts' is 0 for the same reason - there are none in space.
 set =
     { "name", "value", "lock"
-      "generator", "RANDOM", FALSE
-      "topology", "HEX|ISO", FALSE
+      "generator", "SPACE", FALSE
+      "topology", "ISO", FALSE
       "wrap", "WRAPX|WRAPY", FALSE
-      "startpos", "SINGLE", FALSE
       "tinyisles", FALSE, FALSE
       "northlatitude", 500, FALSE
       "southlatitude", 500, FALSE
       "separatepoles", FALSE, FALSE
-      "huts", 10, FALSE
+      "huts", 0, FALSE
       "aifill", 0, FALSE
       "dispersion", 0, FALSE
       "diplomacy", "ALL", FALSE
