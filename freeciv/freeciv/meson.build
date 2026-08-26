@@ -837,6 +837,9 @@ server_inc = [common_inc, include_directories('server', 'server/advisors',
               'server/scripting', 'server/generator', 'server/savegame',
               'ai', 'ai/classic')]
 
+client_inc = [common_inc, include_directories('client', 'client/include',
+              'client/luascript', 'client/agents')]
+
 tool_inc = [server_inc, include_directories('tools/ruleutil', 'tools/shared')]
 
 runwrap = custom_target('runwrap', output: 'run.sh',
