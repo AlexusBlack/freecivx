@@ -1,1 +1,5 @@
 /dl_freeciv.sh
+
+# Native build tree from prepare_freeciv_gtk.sh. The root .gitignore already
+# covers 'build/' (the emscripten tree) but not this one.
+/build-gtk/

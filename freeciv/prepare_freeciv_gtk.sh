@@ -37,6 +37,9 @@ cd "${DIR}"
 SRC_DIR="${DIR}/freeciv"
 BUILD_DIR="${DIR}/build-gtk"
 INSTALL_DIR="${FREECIV_GTK_PREFIX:-${HOME}/freeciv-gtk}"
+# Scratch dir for map screenshots + autosaves from the test loop below. Its
+# contents are gitignored by mapimg/.gitignore ('*' with '!.gitignore').
+MAPIMG_DIR="${DIR}/mapimg"
 NUM_CORES="$(nproc)"
 RECONFIGURE=0
 CLEAN=0
@@ -144,6 +147,10 @@ if [ "${DO_INSTALL}" -eq 1 ]; then
   ninja -C "${BUILD_DIR}" install
 fi
 
+# Present even in a fresh clone (mapimg/.gitignore is tracked), but recreate it
+# in case it was wiped by hand.
+mkdir -p "${MAPIMG_DIR}"
+
 # --- done --------------------------------------------------------------------
 
 cat <<EOF
@@ -151,6 +158,7 @@ cat <<EOF
 Build complete.
   Build dir  : ${BUILD_DIR}
   Install dir: ${INSTALL_DIR}
+  Map images : ${MAPIMG_DIR} (gitignored)
   GTK client : $( [ "${BUILD_GTK}" -eq 1 ] && echo "yes" || echo "no (server-only tree)" )
 
 Quick map-generator test loop:
@@ -159,7 +167,6 @@ Quick map-generator test loop:
   ninja -C ${BUILD_DIR} && ninja -C ${BUILD_DIR} install
 
   # Generate a map with no GUI and dump it to a PNG. Verified working:
-  mkdir -p /tmp/mapgen && cd /tmp/mapgen
   {
     printf 'set minplayers 0\nset aifill 2\n'
     printf 'set generator FRACTAL\nset mapseed 12345\n'
@@ -169,8 +176,8 @@ Quick map-generator test loop:
     printf 'mapimg create 0\n'
     sleep 4
     printf 'quit\n'
-  } | ${INSTALL_DIR}/bin/freeciv-server -d v --saves .
-  # -> writes ./freeciv.map.png
+  } | ${INSTALL_DIR}/bin/freeciv-server -d v --saves ${MAPIMG_DIR}
+  # -> writes ${MAPIMG_DIR}/freeciv.map.png
 
 Four things that will bite you (all found the hard way):
 
@@ -182,7 +189,9 @@ Four things that will bite you (all found the hard way):
      the printf/sleep pipeline above rather than a .serv file.
   3. 'set minplayers 0' is required, or an AI-only game refuses to start
      ("Not enough human players").
-  4. mapimg writes into the --saves directory, not the cwd.
+  4. mapimg writes into the --saves directory, not the cwd - which is why
+     the loop above points it at ${MAPIMG_DIR}. That directory ignores
+     its own contents, so screenshots and autosaves never reach git.
 
   '-d v' is needed: print_mapgen_map() logs terrain statistics at LOG_VERBOSE
   (server/generator/mapgen.c:1232). '-d d' additionally enables log_debug,
