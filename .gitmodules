@@ -1,0 +1,3 @@
+[submodule "freeciv/tilesets/space"]
+	path = freeciv/tilesets/space
+	url = git@github.com:AlexusBlack/freeciv-space-tileset.git

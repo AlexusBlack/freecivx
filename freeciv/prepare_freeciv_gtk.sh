@@ -40,6 +40,11 @@ INSTALL_DIR="${FREECIV_GTK_PREFIX:-${HOME}/freeciv-gtk}"
 # Scratch dir for map screenshots + autosaves from the test loop below. Its
 # contents are gitignored by mapimg/.gitignore ('*' with '!.gitignore').
 MAPIMG_DIR="${DIR}/mapimg"
+# The space tileset lives in its own repo, pulled in as a git submodule so its
+# history stays separate from this one. It is never copied into the install
+# tree; instead it is prepended to FREECIV_DATA_PATH so the client picks it up
+# straight from the working copy and edits take effect without reinstalling.
+TILESETS_DIR="${DIR}/tilesets"
 NUM_CORES="$(nproc)"
 RECONFIGURE=0
 CLEAN=0
@@ -151,6 +156,38 @@ fi
 # in case it was wiped by hand.
 mkdir -p "${MAPIMG_DIR}"
 
+# Make the submodule tilesets visible to a plain './freeciv-gtk3.22' launch.
+#
+# The client's search path is "." + "data" + ~/.local/share/freeciv + the
+# compiled-in datadir, so a tileset sitting in tilesets/ is invisible unless
+# FREECIV_DATA_PATH is exported for every single run. Symlinking into the
+# install tree instead means the tileset shows up in the normal tileset menu
+# with no environment set up at all.
+#
+# These are symlinks, not copies, on purpose: they resolve back to the
+# submodule working copy, so editing a .spec takes effect on the next client
+# start with no reinstall, and the tileset's git history stays entirely in its
+# own repo. 'ninja install' does not remove them, but it also never creates
+# them, so we (re)make them here on every install.
+if [ "${DO_INSTALL}" -eq 1 ] && [ -d "${TILESETS_DIR}" ]; then
+  for tsdir in "${TILESETS_DIR}"/*/; do
+    [ -d "${tsdir}" ] || continue
+    tsname="$(basename "${tsdir}")"
+    # An unpopulated submodule is an empty dir - skip it rather than making
+    # dangling links that would show a broken tileset in the menu.
+    if [ ! -f "${tsdir}/${tsname}.tilespec" ]; then
+      echo "note: tilesets/${tsname} has no ${tsname}.tilespec (submodule not"
+      echo "      checked out? try 'git submodule update --init'); skipping."
+      continue
+    fi
+    ln -sfn "${tsdir}/${tsname}.tilespec" \
+            "${INSTALL_DIR}/share/freeciv/${tsname}.tilespec"
+    ln -sfn "${tsdir}/${tsname}" \
+            "${INSTALL_DIR}/share/freeciv/${tsname}"
+    echo "linked tileset '${tsname}' into ${INSTALL_DIR}/share/freeciv"
+  done
+fi
+
 # --- done --------------------------------------------------------------------
 
 cat <<EOF
@@ -159,6 +196,7 @@ Build complete.
   Build dir  : ${BUILD_DIR}
   Install dir: ${INSTALL_DIR}
   Map images : ${MAPIMG_DIR} (gitignored)
+  Tilesets   : ${TILESETS_DIR} $( [ -f "${TILESETS_DIR}/space/space.tilespec" ] && echo "(space: ok)" || echo "(space: MISSING - run 'git submodule update --init')" )
   GTK client : $( [ "${BUILD_GTK}" -eq 1 ] && echo "yes" || echo "no (server-only tree)" )
 
 Quick map-generator test loop:
@@ -208,6 +246,15 @@ if [ "${BUILD_GTK}" -eq 1 ]; then
 
   # visual: launch the GTK client and let it start a local server
   ${INSTALL_DIR}/bin/freeciv-gtk3.22
+
+  # visual, with the space tileset. No environment needed: the install step
+  # symlinked tilesets/space into share/freeciv, so 'space' is in the tileset
+  # menu and the links point back at the submodule working copy.
+  ${INSTALL_DIR}/bin/freeciv-gtk3.22 --tiles space
+
+  # headless check that the tileset still loads (exit 124 from timeout = it
+  # stayed up = good; any '0:' line in the output is a fatal):
+  timeout 30 xvfb-run -a ${INSTALL_DIR}/bin/freeciv-gtk3.22 --tiles space -- -d 2
 EOF
 else
   cat <<EOF
