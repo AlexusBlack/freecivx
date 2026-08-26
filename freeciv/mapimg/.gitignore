@@ -1,0 +1,6 @@
+# Scratch output from the map-generator test loop in prepare_freeciv_gtk.sh:
+# freeciv-server --saves writes its map PNGs and autosaves here.
+# Ignore everything in this directory except this file, which exists only so
+# that the directory itself is present in a fresh clone.
+*
+!.gitignore
