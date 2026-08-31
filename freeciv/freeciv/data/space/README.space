@@ -42,6 +42,12 @@ generator, and a game started with generator=RANDOM on this ruleset
 still produces an ordinary Earth-like map from the terrains inherited
 from webciv.
 
+Cities claim much less territory than on an Earth map. A size 1 city
+owns a 5x5 square without its corners - exactly the tiles it can work -
+and the claim widens by about a ring per point of city size. The stock
+values would have given a new city a fifth to a half of its system on
+the turn it was founded; see the [borders] section of game.ruleset.
+
 Every space terrain and resource declares a 'graphic' of its own plus
 a 'graphic_alt' naming an existing tileset section. Only "star" has
 art specific to this ruleset; the rest fall back to the terrain art

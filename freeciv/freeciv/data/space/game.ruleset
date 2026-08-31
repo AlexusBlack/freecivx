@@ -295,11 +295,32 @@ nuke_pop_loss_pct = 49
 nuke_defender_survival_chance_pct = 0
 
 [borders]
-; Base border radius from city.
-radius_sq_city = 17
+; A city claims every tile with dx^2 + dy^2 <= radius_sq_city + size *
+; size_effect (see tile_border_source_radius_sq() in common/borders.c).
+;
+; The stock Earth values 17 / 1 gave a size-1 city a squared radius of 18 -
+; 61 tiles, reaching four tiles out. That is an Earth-sized claim on a map
+; whose systems are discs of radius 7-10, so a newly founded city owned a
+; fifth to a half of its system before it had grown at all. With no base and
+; a per-size step instead, the claim starts at the workable area and widens
+; by roughly a ring per point of city size:
+;
+;   size 1  rsq  5  5x5 without corners   21 tiles
+;   size 2  rsq 10  7x7 without corners   37 tiles
+;   size 3  rsq 15  7x7 without corners   45 tiles
+;   size 4  rsq 20  9x9 without corners   69 tiles
+;   size 5  rsq 25  11x11                 81 tiles
+;
+; The claim is a squared radius but the ladder we want (reach = size + 1) is
+; quadratic, so no linear pair reproduces it beyond the first few rungs;
+; these values match sizes 1 and 2 exactly and then grow more slowly, which
+; keeps grown cities from swallowing a whole system. Note the size term
+; saturates only at size 26 (MIN(size, CITY_MAP_MAX_RADIUS_SQ)), so there is
+; no ruleset-side cap short of that.
+radius_sq_city = 0
 
 ; Border radius square increased by this amount / point of city size
-size_effect    = 1
+size_effect    = 5
 
 ; Difference between city workable area and area permanently claimed by
 ; city (these tiles cannot be stolen by stronger border sources).
