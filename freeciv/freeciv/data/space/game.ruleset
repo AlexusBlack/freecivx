@@ -739,11 +739,20 @@ names =
 ;
 ; 'startpos' is left at DEFAULT because the generator ignores it: every player
 ; starts in Sol. 'huts' is 0 for the same reason - there are none in space.
+;
+; 'landmass' (the wld.map.server.landpercent field) is the share of the map
+; the generator is allowed to spend on systems - in space the "land" is system
+; tiles and the "ocean" is the void between them. The stock default of 30 is an
+; Earth number, and it was the binding constraint on system size:
+; space_setup() shrinks the system radius until enough of them fit the budget,
+; so 30 forced systems down to about half Sol's radius no matter how much room
+; the map had.
 set =
     { "name", "value", "lock"
       "generator", "SPACE", FALSE
       "topology", "ISO", FALSE
       "wrap", "WRAPX|WRAPY", FALSE
+      "landmass", 55, FALSE
       "tinyisles", FALSE, FALSE
       "northlatitude", 500, FALSE
       "southlatitude", 500, FALSE

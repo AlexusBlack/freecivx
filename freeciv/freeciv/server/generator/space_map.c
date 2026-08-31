@@ -68,13 +68,19 @@
 #define SOL_MIN_RADIUS       10
 #define TILES_PER_START      22
 
-/* Procedural systems. */
-#define SYS_MIN_RADIUS       4
-#define SYS_MAX_RADIUS       9
-#define MIN_GAP              5      /* free tiles between two system edges */
+/* Procedural systems. Their upper size is whatever space_setup() fits into
+ * the budget, not a constant: anchoring the draw to an absolute floor made
+ * every system small even on maps with room to spare. SYS_MIN_FRAC keeps the
+ * spread narrow so the procedural systems stay comparable to Sol, and
+ * SYS_ABS_MIN is the floor for maps too cramped to honour the fraction. */
+#define SYS_MIN_FRAC         0.70
+#define SYS_ABS_MIN          4
+#define MIN_GAP              3      /* free tiles between two system edges */
 #define MAX_GAP              15     /* above this, relaxation pulls closer */
 #define PACKING_EFFICIENCY   0.75   /* discs never tile the plane perfectly */
-#define MAX_DART_ATTEMPTS    4000
+/* Per system, not for the whole map: place_centres() places the largest disc
+ * first and gives each one its own budget. */
+#define MAX_DART_ATTEMPTS    600
 #define MAX_ANGLE_TRIES      200
 
 #define MAX_BELTS            3
@@ -290,7 +296,9 @@ static void init_system(struct space_system *sys, struct tile *centre,
    * is 30; treat that as the middle of the range. */
   sys->n_belts = 1 + (wld.map.server.steepness * MAX_BELTS) / 100;
   sys->n_belts = CLIP(0, sys->n_belts, MAX_BELTS);
-  sys->has_kuiper = (fc_rand(100) < 30 + wld.map.server.steepness);
+  /* Sol always has one: its composition is fixed, and the ice planet in the
+   * outermost orbit reads as an accident without the belt behind it. */
+  sys->has_kuiper = is_sol || (fc_rand(100) < 30 + wld.map.server.steepness);
 
   /* Belt radii, at least 2 apart so two belts never merge into a slab. */
   b = 0;
@@ -353,17 +361,20 @@ static bool space_setup(int *r_sol, int *n_procedural, int *r_procedural)
   /* Fit the procedural systems into what 'landpercent' asks for, then shrink
    * R before shrinking N: a map of many small systems still plays, a map of
    * two big ones does not. */
-  r = SYS_MAX_RADIUS;
+  /* No procedural system is bigger than Sol: Sol is the map's anchor, and it
+   * earns that by composition - the fixed eight-body layout and the
+   * guaranteed Kuiper belt - rather than by dwarfing its neighbours. */
+  r = rs;
   do {
     sys_area = M_PI * (r + MIN_GAP / 2.0) * (r + MIN_GAP / 2.0);
     n = (int) ((map_num_tiles() * wld.map.server.landpercent / 100.0
                 - M_PI * rs * rs) / sys_area);
 
-    if (n >= player_count() || r <= SYS_MIN_RADIUS) {
+    if (n >= player_count() || r <= SYS_ABS_MIN) {
       break;
     }
     r--;
-  } while (r >= SYS_MIN_RADIUS);
+  } while (r >= SYS_ABS_MIN);
 
   n = MAX(n, 0);
 
@@ -389,13 +400,49 @@ static bool space_setup(int *r_sol, int *n_procedural, int *r_procedural)
 }
 
 /**********************************************************************//**
+  Sort helper: descending, so the largest disc is placed first.
+**************************************************************************/
+static int cmp_radius_desc(const void *a, const void *b)
+{
+  return *(const int *) b - *(const int *) a;
+}
+
+/**********************************************************************//**
+  Would a system of this radius centred here clear every system already
+  placed? Uses real_map_distance() rather than raw coordinates, so a system
+  near the seam of a wrapping map is not wrongly considered far from one on
+  the other side.
+**************************************************************************/
+static bool centre_is_clear(const struct tile *ptile, int radius)
+{
+  int i;
+
+  for (i = 0; i < num_systems; i++) {
+    if (real_map_distance(ptile, systems[i].centre)
+        < radius + systems[i].radius + MIN_GAP) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**********************************************************************//**
   Phase 1. Place system centres: Sol pinned at the map centre, the rest by
-  dart throwing, then relaxed so the gaps land in the 5-15 tile band rather
-  than merely "at least 5".
+  dart throwing.
+
+  The radii are rolled up front and placed largest first. Rolling a fresh
+  radius per throw - the obvious way, and what this did originally - packs
+  badly: random sequential adsorption of discs saturates near 54% coverage,
+  and once the map is that full a late throw that happens to roll a large
+  radius fails over and over while a small one would still have fitted. Big
+  discs first, each with its own attempt budget and shrinking by a tile when
+  it cannot be placed, gets much closer to the requested count.
 **************************************************************************/
 static void place_centres(int r_sol, int n_procedural, int r_procedural)
 {
-  int attempts;
+  int *radii;
+  int r_min, i;
 
   systems = fc_calloc(n_procedural + 1, sizeof(*systems));
   num_systems = 0;
@@ -405,33 +452,58 @@ static void place_centres(int r_sol, int n_procedural, int r_procedural)
                                  wld.map.ysize / 2),
               r_sol, TRUE);
 
-  for (attempts = 0;
-       attempts < MAX_DART_ATTEMPTS && num_systems <= n_procedural;
-       attempts++) {
-    struct tile *ptile = rand_map_pos(&(wld.map));
-    int radius = SYS_MIN_RADIUS
-      + fc_rand(MAX(1, r_procedural - SYS_MIN_RADIUS + 1));
-    bool ok = TRUE;
-    int i;
+  if (n_procedural <= 0) {
+    return;
+  }
 
-    /* real_map_distance() rather than raw coordinates, so a system near the
-     * seam of a wrapping map is not wrongly considered far from one on the
-     * other side. */
-    for (i = 0; i < num_systems; i++) {
-      if (real_map_distance(ptile, systems[i].centre)
-          < radius + systems[i].radius + MIN_GAP) {
-        ok = FALSE;
+  r_min = MAX(SYS_ABS_MIN,
+              (int) floor(SYS_MIN_FRAC * r_procedural + 0.5));
+  r_min = MIN(r_min, r_procedural);
+
+  radii = fc_malloc(n_procedural * sizeof(*radii));
+  for (i = 0; i < n_procedural; i++) {
+    radii[i] = r_min + fc_rand(r_procedural - r_min + 1);
+  }
+  qsort(radii, n_procedural, sizeof(*radii), cmp_radius_desc);
+
+  for (i = 0; i < n_procedural; i++) {
+    int radius = radii[i];
+
+    while (radius >= SYS_ABS_MIN) {
+      struct tile *found = NULL;
+      int attempts;
+
+      for (attempts = 0; attempts < MAX_DART_ATTEMPTS; attempts++) {
+        struct tile *ptile = rand_map_pos(&(wld.map));
+
+        if (centre_is_clear(ptile, radius)) {
+          found = ptile;
+          break;
+        }
+      }
+
+      if (found != NULL) {
+        init_system(&systems[num_systems++], found, radius, FALSE);
         break;
       }
-    }
 
-    if (ok) {
-      init_system(&systems[num_systems++], ptile, radius, FALSE);
+      /* Nowhere left for a disc this big. Try one tile smaller before
+       * giving up on it entirely. */
+      radius--;
     }
   }
 
-  log_verbose("Space generator: placed %d systems in %d dart throws",
-              num_systems, attempts);
+  free(radii);
+
+  log_verbose("Space generator: placed %d of %d systems, radii %d-%d",
+              num_systems, n_procedural + 1, r_min, r_procedural);
+
+  if (num_systems < player_count()) {
+    log_normal(_("The \"Star systems\" map fitted only %d systems for %d "
+                 "players. Expansion will be tight; consider a larger map "
+                 "or a higher 'landpercent'."),
+               num_systems, player_count());
+  }
 }
 
 /**********************************************************************//**

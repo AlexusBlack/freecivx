@@ -21,7 +21,8 @@ one a disc of concentric rings around a central star:
   Middle System  the temperate ring   (rocky worlds; players start here)
   Outer System   the cold outer ring  (gas giants, ice worlds)
   Asteroid Belt  a rubble ring between Middle and Outer
-  Kuiper Belt    a rubble ring outside Outer
+  Kuiper Belt    a rubble ring outside Outer; sometimes absent from a
+                 procedural system, but always present in Sol
   Near Space     the shallows just outside a system
   Interstellar Space  the deep void between systems
 

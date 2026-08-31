@@ -25,7 +25,7 @@ precedent for a non-Earth ruleset).
 | Middle | middle band | Plains (less irrigable) | 0–3 rocky planets, each with 1–3 rocky moons |
 | Outer | outer band | **Arctic** (least irrigable) | 0–2 gas giants (3–8 moons each), 0–2 ice planets (0–2 moons each) |
 | Belts | 1–3 annuli, **any ring** | Hills | asteroid belts |
-| Kuiper | outermost annulus, optional | **Forest** | Kuiper belt |
+| Kuiper | outermost annulus; optional procedurally, **always in Sol** | **Forest** | Kuiper belt |
 | — | outside | Ocean class | interstellar space, **no resources** |
 
 > The terrain analogue column names the **tileset art** each ring borrows, not a
@@ -248,9 +248,28 @@ bool map_generate_space(void);   /* FALSE => generation failed */
    `landpercent`:
 
    ```
-   R  ∈ [4, 9], drawn per system
-   N  chosen so that   π·R_sol² + Σ π·R_i²  ≈  map_num_tiles() · landpercent/100
+   R_max = R_sol, shrinking by 1 until N >= player_count() (floor SYS_ABS_MIN = 4)
+   R_min = MAX(SYS_ABS_MIN, SYS_MIN_FRAC · R_max)          /* SYS_MIN_FRAC = 0.70 */
+   R     ∈ [R_min, R_max], drawn per system
+   N     chosen so that  π·R_sol² + Σ π·R_i²  ≈  map_num_tiles() · landpercent/100
    ```
+
+   The upper bound is `R_sol`, not a constant: a procedural system may be as
+   big as Sol but never bigger, since Sol anchors the map by composition —
+   the fixed eight-body layout and the guaranteed Kuiper belt — rather than by
+   dwarfing its neighbours. `SYS_MIN_FRAC` keeps the spread narrow so systems
+   are comparable in size; the absolute floor only bites on maps too cramped
+   to honour the fraction, which is where the original `[4, 9]` behaviour
+   survives as graceful degradation.
+
+   `landpercent` is reinterpreted here as the share of the map spent on
+   systems, and `data/space/game.ruleset` raises its default from the stock
+   Earth value of 30 to **55**. Note the ruleset must spell it `landmass` —
+   that is the setting's name (`settings.c:1794`); `landpercent` is only the
+   name of the `wld.map.server` field it writes to, and a `[settings]` entry
+   using it is rejected as an "unknown unsettable setting". At 30 the budget — not the geometry — was what
+   capped system size, forcing `R` down to about half `R_sol` however much
+   room the map had.
 
    Aim for `N >= player_count()` expansion targets. Note the
    `num_continents >= player_count() + 3` rule in `startpos.c:392` **does not
@@ -269,15 +288,32 @@ bool map_generate_space(void);   /* FALSE => generation failed */
    sol->radius = R_sol;
    ```
 
-2. **Procedural systems** by dart throwing (Poisson-disk):
+2. **Procedural systems** by dart throwing (Poisson-disk), **largest first**:
 
    ```
-   for attempt in 1..MAX_ATTEMPTS:
-       t = rand_map_pos(&wld.map)
-       reject if for any placed centre c:
-           real_map_distance(t, c) < R(t) + R(c) + MIN_GAP      /* MIN_GAP = 5 */
-       accept
+   radii = N draws from [R_min, R_max], sorted descending
+   for R in radii:
+       while R >= SYS_ABS_MIN:
+           for attempt in 1..MAX_DART_ATTEMPTS:          /* per system, 600 */
+               t = rand_map_pos(&wld.map)
+               reject if for any placed centre c:
+                   real_map_distance(t, c) < R + R(c) + MIN_GAP   /* MIN_GAP = 3 */
+               accept and break
+           if placed: break else R--                     /* try one tile smaller */
    ```
+
+   Rolling a fresh radius per throw instead — the obvious way, and the first
+   implementation — packs badly. Random sequential adsorption of discs
+   saturates near 54 % coverage, and once the map is that full a throw that
+   happens to roll a large radius fails repeatedly where a small one would
+   still have fitted; the loop then just returns short. Placing big discs
+   first, each with its own attempt budget and shrinking by a tile when it
+   cannot be placed, gets much closer to the requested `N`.
+
+   `MIN_GAP` is 3 rather than 5, both to let more and larger systems fit and
+   because `NEAR_SPACE_BAND` is also 3: adjacent systems' shallows now meet
+   and form navigable Near Space corridors between neighbours. Nothing is
+   damaged by the overlap — `paint_near_space()` only overwrites void.
 
    `real_map_distance()` (`common/map.c:630`) is used rather than raw
    coordinates so map wrapping is respected.
@@ -331,9 +367,11 @@ from any previously chosen belt radius. Angular coverage 60–100 %: walk the
 annulus and skip runs of tiles to leave gaps. Overwrite the ring terrain with
 `Asteroid Belt`.
 
-**Kuiper belt:** with probability ~50 %, an annulus at
-`r_eff ∈ (R_outer, R_kuiper]`, width 1–2, 50–90 % coverage, terrain
-`Kuiper Belt`.
+**Kuiper belt:** an annulus at `r_eff ∈ (R_outer, R_kuiper]`, width 1–2,
+50–90 % coverage, terrain `Kuiper Belt`. Present with probability
+`30 + steepness` % in a procedural system, and **always** in Sol — Sol's
+composition is fixed, and the ice planet in the outermost orbit reads as an
+accident without the belt behind it.
 
 Mark every written tile in the shared `placed_map`
 (`create_placed_map()` / `map_set_placed()`, `mapgen_utils.h`).
