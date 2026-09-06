@@ -144,6 +144,37 @@ the map and there is no risk of stray resources appearing in interstellar space.
 | `Outer System` | Land | low output, `TER_STARTER`, `TER_NOT_GENERATED` | arctic art |
 | `Asteroid Belt` | Land | mine-able, low food, `TER_NOT_GENERATED` | hills art |
 | `Kuiper Belt` | Land | mine-able, `TER_NOT_GENERATED` | forest art |
+
+**Ring and belt outputs.** The rings carry the habitat food and the belts carry
+the ore; nothing on a space map produces trade except a settled world and a
+road. Increments are what the improvement adds on top of the base.
+
+| Terrain | food | shield | trade | irrig. (+food) | mine (+shield) | irrig. / mine / road time |
+|---|---|---|---|---|---|---|
+| `Inner System` | 2 | 0 | 0 | +1 | — | 3 / 5 / 2 |
+| `Middle System` | 1 | 0 | 0 | +1 | — | 3 / 5 / 2 |
+| `Outer System` | 0 | 0 | 0 | +1 | — | 3 / 5 / 2 |
+| `Asteroid Belt` | 0 | 1 | 0 | +1 | +2 | 5 / 5 / 3 |
+| `Kuiper Belt` | 0 | 1 | 0 | +1 | +1 | 5 / 5 / 3 |
+
+The rings have `mining_time > 0` but `mining_shield_incr = 0`. That is not a
+mistake: `TerrainAlter "CanMine"` is a hard requirement on Build Mine and means
+`mining_time > 0`, so without it a world sitting on a ring could never be mined
+at all. A mine on a *bare* ring tile yields nothing, and the auto-worker AI
+skips it of its own accord — `adv_calc_extra()`
+(`server/advisors/infracache.c:190`) prices an extra by adding it to a virtual
+tile and re-reading `city_tile_output()`, so it sees the real yield either way.
+
+All five are irrigable and roadable, and `road_trade_incr_pct = 100` on each, so
+a road is worth +1 trade (`[road_road] trade_incr = 1`). Since `[extra_road]`
+carries `AutoOnCityCenter`, a new city's centre tile earns that trade point
+immediately.
+
+The three rings are also **irrigation sources**, via three
+`actionenabler_irrigate_src_*` sections cloned from the ocean one. A space map
+has no water for the stock enablers to find; only the outermost ring touches
+Near Space (which is `Oceanic`), so without these the interior of a system could
+never be irrigated.
 | `Near Space` | Oceanic | `property_ocean_depth = 0`, `TER_NOT_GENERATED` | halo around systems |
 | `Interstellar Space` | Oceanic | `property_ocean_depth = 80`, `TER_NOT_GENERATED`, empty `resources` | deep space |
 | *(Earth-like set)* | mixed | normal `property_*`, **no** `TER_NOT_GENERATED` | see below |
@@ -191,7 +222,31 @@ Other requirements derived from code:
 | `Molten Moon`, `Toxic Moon`, `Ice Moon` | `Outer System` | moon pass |
 
 Each carries its own `output[]` (food / shield / trade), since moons are
-self-sufficient producers (OQ4).
+self-sufficient producers (OQ4) — a planet and its moon are worth the same, and
+what separates two worlds is what kind of body it is, not how big.
+
+A resource's `output[]` can only be a flat bonus; there is no
+`mining_shield_incr` on a resource, only on a terrain. So the *base* yield of a
+world lives in `[resource_*]` and its *improved* yield lives in
+`effects.ruleset` as `Output_Add_Tile`:
+
+| Body | base | mined (+shield) | irrigated (+food) |
+|---|---|---|---|
+| `Molten Planet` / `Molten Moon` | 2 trade | +4 | +2 |
+| `Toxic Planet` / `Toxic Moon` | 2 trade | +3 | +3 |
+| `Rocky Planet` / `Rocky Moon` | 2 trade | +2 | +2 |
+| `Ice Planet` / `Ice Moon` | 2 trade | +2 | +1 |
+| `Gas Giant` | 2 shield, 2 trade | +3 (→5) | +2 |
+
+A requirement vector is a pure AND — there is no OR — so keying nine bodies
+individually would need one effect apiece. Instead the paired planet/moon extras
+carry a shared **extra user flag** (`MoltenBody`, `ToxicBody`, `RockyBody`,
+`IceBody`, declared in `terrain.ruleset [control] extra_flags`) and each effect
+matches on `"ExtraFlag"` instead of `"Extra"`. Gas Giant is unpaired and keys on
+its own extra. That is 5 mine effects and 5 irrigation effects; a third set of 5
+repeats the irrigation values for a city centre, which gets free irrigation
+without ever carrying the `Irrigation` extra (mirroring stock
+`effect_irrigation_center`). 15 sections in all.
 
 `resource_freq` is only read by `pick_resource()` (`mapgen_utils.c:801`), which
 we bypass — but set sane values anyway so the ruleset stays usable with the

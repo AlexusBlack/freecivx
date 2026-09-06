@@ -42,6 +42,48 @@ generator, and a game started with generator=RANDOM on this ruleset
 still produces an ordinary Earth-like map from the terrains inherited
 from webciv.
 
+What a tile is worth
+--------------------
+
+The rings feed a colony and the belts supply its ore; nothing produces
+trade except a settled world and a road. Values are the tile's own
+output; the improvement columns are what building it adds on top.
+
+                  food  shield  trade   irrig.  mine   times (I/M/R)
+  Inner System      2      0      0       +1     -        3 / 5 / 2
+  Middle System     1      0      0       +1     -        3 / 5 / 2
+  Outer System      0      0      0       +1     -        3 / 5 / 2
+  Asteroid Belt     0      1      0       +1    +2        5 / 5 / 3
+  Kuiper Belt       0      1      0       +1    +1        5 / 5 / 3
+
+All five can take a road, worth +1 trade, and all five can be
+irrigated. The three rings are also irrigation *sources*: a space map
+has no rivers and only the outermost ring touches Near Space, so
+without that the inside of a system could never be watered. The rings
+have a mining time but no mining bonus - that is deliberate, since
+Freeciv refuses Build Mine outright on a terrain with no mining time,
+and a world sitting on a ring would then be unmineable. A mine on a
+bare ring tile yields nothing, and the auto-workers know it.
+
+A world adds its own output to the ring it sits on. Every planet and
+moon is worth 2 trade; a gas giant also gives 2 shields. What the
+worlds differ in is what you can make of them:
+
+                       base        mined        irrigated
+  Molten planet/moon   2 trade     +4 shield    +2 food
+  Toxic  planet/moon   2 trade     +3 shield    +3 food
+  Rocky  planet/moon   2 trade     +2 shield    +2 food
+  Ice    planet/moon   2 trade     +2 shield    +1 food
+  Gas giant            2 trade,    +3 shield    +2 food
+                       2 shield    (5 total)
+
+A planet and its moon are worth the same. What separates two worlds is
+what kind of body it is, not how big. Because a resource in Freeciv can
+only carry a flat bonus, the mined and irrigated figures live in
+effects.ruleset as Output_Add_Tile effects rather than in the resource
+itself.
+
+
 Cities claim much less territory than on an Earth map. A size 1 city
 owns a 5x5 square without its corners - exactly the tiles it can work -
 and the claim widens by about a ring per point of city size. The stock

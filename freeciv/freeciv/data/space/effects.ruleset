@@ -1725,6 +1725,208 @@ reqs	=
       "Extra", "Oil Well", "Tile", FALSE
     }
 
+; /* <-- avoid gettext warnings
+;
+; Celestial bodies.
+;
+; A planet or moon is a resource sitting on a ring terrain, and a resource can
+; only carry flat output - it has no mining or irrigation increment of its own.
+; So the yield of a worked world is expressed here instead: Output_Add_Tile,
+; conditioned on the Mine or Irrigation extra being present together with the
+; body. This adds to whatever the ring terrain itself gives, so an irrigated
+; Middle System carrying a Rocky Planet is 2 food from the ring plus 2 from the
+; world.
+;
+; The rings have mining_time > 0 but mining_shield_incr = 0, purely so that the
+; Build Mine action is available on them: a mine on a bare ring tile yields
+; nothing, which is also why the auto-worker AI leaves them alone - it prices
+; an extra by building it on a virtual tile and re-reading the output, so it
+; sees these effects correctly.
+;
+; The reqs key off the shared MoltenBody/ToxicBody/RockyBody/IceBody extra
+; flags rather than off the nine individual worlds, because a requirement
+; vector is an AND: without the flags, "Molten Planet or Molten Moon" would
+; take one effect each.
+;
+; Each body needs three effects, not two. The city centre gets its terrain's
+; irrigation bonus for free (see effect_irrigation_center above) without ever
+; carrying the Irrigation extra, so a third effect repeats that condition for
+; the body - otherwise a capital founded on a world would collect the ring's
+; free irrigation food but not the world's.
+;
+; */ <-- avoid gettext warnings
+
+[effect_mine_molten_body]
+type    = "Output_Add_Tile"
+value   = 4
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Mine", "Tile"
+      "ExtraFlag", "MoltenBody", "Tile"
+      "OutputType", "Shield", "Local"
+    }
+
+[effect_mine_toxic_body]
+type    = "Output_Add_Tile"
+value   = 3
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Mine", "Tile"
+      "ExtraFlag", "ToxicBody", "Tile"
+      "OutputType", "Shield", "Local"
+    }
+
+[effect_mine_rocky_body]
+type    = "Output_Add_Tile"
+value   = 2
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Mine", "Tile"
+      "ExtraFlag", "RockyBody", "Tile"
+      "OutputType", "Shield", "Local"
+    }
+
+[effect_mine_ice_body]
+type    = "Output_Add_Tile"
+value   = 2
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Mine", "Tile"
+      "ExtraFlag", "IceBody", "Tile"
+      "OutputType", "Shield", "Local"
+    }
+
+; 3, not 5: the Gas Giant already gives 2 shields unworked.
+[effect_mine_gas_giant]
+type    = "Output_Add_Tile"
+value   = 3
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Mine", "Tile"
+      "Extra", "Gas Giant", "Tile"
+      "OutputType", "Shield", "Local"
+    }
+
+[effect_irrigation_molten_body]
+type    = "Output_Add_Tile"
+value   = 2
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Irrigation", "Tile"
+      "ExtraFlag", "MoltenBody", "Tile"
+      "OutputType", "Food", "Local"
+    }
+
+[effect_irrigation_toxic_body]
+type    = "Output_Add_Tile"
+value   = 3
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Irrigation", "Tile"
+      "ExtraFlag", "ToxicBody", "Tile"
+      "OutputType", "Food", "Local"
+    }
+
+[effect_irrigation_rocky_body]
+type    = "Output_Add_Tile"
+value   = 2
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Irrigation", "Tile"
+      "ExtraFlag", "RockyBody", "Tile"
+      "OutputType", "Food", "Local"
+    }
+
+[effect_irrigation_ice_body]
+type    = "Output_Add_Tile"
+value   = 1
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Irrigation", "Tile"
+      "ExtraFlag", "IceBody", "Tile"
+      "OutputType", "Food", "Local"
+    }
+
+[effect_irrigation_gas_giant]
+type    = "Output_Add_Tile"
+value   = 2
+reqs    =
+    { "type", "name", "range"
+      "Extra", "Irrigation", "Tile"
+      "Extra", "Gas Giant", "Tile"
+      "OutputType", "Food", "Local"
+    }
+
+[effect_irrigation_center_molten_body]
+type    = "Output_Add_Tile"
+value   = 2
+reqs    =
+    { "type", "name", "range", "present"
+      "CityTile", "Center", "Tile", TRUE
+      "Extra", "Irrigation", "Tile", FALSE
+      "TerrainAlter", "CanIrrigate", "Tile", TRUE
+      "Extra", "Mine", "Tile", FALSE
+      "Extra", "Oil Well", "Tile", FALSE
+      "ExtraFlag", "MoltenBody", "Tile", TRUE
+      "OutputType", "Food", "Local", TRUE
+    }
+
+[effect_irrigation_center_toxic_body]
+type    = "Output_Add_Tile"
+value   = 3
+reqs    =
+    { "type", "name", "range", "present"
+      "CityTile", "Center", "Tile", TRUE
+      "Extra", "Irrigation", "Tile", FALSE
+      "TerrainAlter", "CanIrrigate", "Tile", TRUE
+      "Extra", "Mine", "Tile", FALSE
+      "Extra", "Oil Well", "Tile", FALSE
+      "ExtraFlag", "ToxicBody", "Tile", TRUE
+      "OutputType", "Food", "Local", TRUE
+    }
+
+[effect_irrigation_center_rocky_body]
+type    = "Output_Add_Tile"
+value   = 2
+reqs    =
+    { "type", "name", "range", "present"
+      "CityTile", "Center", "Tile", TRUE
+      "Extra", "Irrigation", "Tile", FALSE
+      "TerrainAlter", "CanIrrigate", "Tile", TRUE
+      "Extra", "Mine", "Tile", FALSE
+      "Extra", "Oil Well", "Tile", FALSE
+      "ExtraFlag", "RockyBody", "Tile", TRUE
+      "OutputType", "Food", "Local", TRUE
+    }
+
+[effect_irrigation_center_ice_body]
+type    = "Output_Add_Tile"
+value   = 1
+reqs    =
+    { "type", "name", "range", "present"
+      "CityTile", "Center", "Tile", TRUE
+      "Extra", "Irrigation", "Tile", FALSE
+      "TerrainAlter", "CanIrrigate", "Tile", TRUE
+      "Extra", "Mine", "Tile", FALSE
+      "Extra", "Oil Well", "Tile", FALSE
+      "ExtraFlag", "IceBody", "Tile", TRUE
+      "OutputType", "Food", "Local", TRUE
+    }
+
+[effect_irrigation_center_gas_giant]
+type    = "Output_Add_Tile"
+value   = 2
+reqs    =
+    { "type", "name", "range", "present"
+      "CityTile", "Center", "Tile", TRUE
+      "Extra", "Irrigation", "Tile", FALSE
+      "TerrainAlter", "CanIrrigate", "Tile", TRUE
+      "Extra", "Mine", "Tile", FALSE
+      "Extra", "Oil Well", "Tile", FALSE
+      "Extra", "Gas Giant", "Tile", TRUE
+      "OutputType", "Food", "Local", TRUE
+    }
+
 [effect_supermarket]
 type    = "Output_Per_Tile"
 value	= 100

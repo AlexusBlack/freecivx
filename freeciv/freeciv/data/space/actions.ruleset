@@ -1179,6 +1179,47 @@ target_reqs    =
       "TerrainAlter", "CanIrrigate", "Tile"
     }
 
+; The three ring terrains are irrigation sources in their own right: a habitat
+; ring is plumbed, and there is no water on a space map for the ocean and river
+; enablers above to find. Without these, only the outermost ring could ever be
+; irrigated - it is the only one that touches Near Space, which is Oceanic.
+
+[actionenabler_irrigate_src_inner_system]
+action        = "Build Irrigation"
+actor_reqs    =
+    { "type",          "name",         "range"
+      "UnitFlag",      "Settlers",     "Local"
+    }
+target_reqs    =
+    { "type",         "name",          "range"
+      "Terrain",      "Inner System",  "CAdjacent"
+      "TerrainAlter", "CanIrrigate",   "Tile"
+    }
+
+[actionenabler_irrigate_src_middle_system]
+action        = "Build Irrigation"
+actor_reqs    =
+    { "type",          "name",         "range"
+      "UnitFlag",      "Settlers",     "Local"
+    }
+target_reqs    =
+    { "type",         "name",          "range"
+      "Terrain",      "Middle System", "CAdjacent"
+      "TerrainAlter", "CanIrrigate",   "Tile"
+    }
+
+[actionenabler_irrigate_src_outer_system]
+action        = "Build Irrigation"
+actor_reqs    =
+    { "type",          "name",         "range"
+      "UnitFlag",      "Settlers",     "Local"
+    }
+target_reqs    =
+    { "type",         "name",          "range"
+      "Terrain",      "Outer System",  "CAdjacent"
+      "TerrainAlter", "CanIrrigate",   "Tile"
+    }
+
 [actionenabler_deboard]
 action        = "Transport Deboard"
 actor_reqs    =

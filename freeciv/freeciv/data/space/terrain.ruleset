@@ -34,9 +34,18 @@ flags =
 ;                 and sensible.
 ; helptxt       = displayed in the help for extra types with this flag
 ;                 (optional)
-;extra_flags =
-;  { "name", "helptxt"
-;  }
+; Each planet shares a flag with its moon. The two are worth the same, and
+; effects.ruleset keys the mined and irrigated yields of a world off these
+; flags rather than off the nine individual extras: a requirement vector is
+; a pure AND, so without a shared flag "Molten Planet or Molten Moon" would
+; need one effect each. Gas Giant has no moon and needs no flag.
+extra_flags =
+  { "name", "helptxt"
+    _("MoltenBody"), _("A molten world. Mines here yield 4 production; an irrigated habitat yields 2 food.")
+    _("ToxicBody"), _("A toxic world. Mines here yield 3 production; an irrigated habitat yields 3 food.")
+    _("RockyBody"), _("A rocky world. Mines here yield 2 production; an irrigated habitat yields 2 food.")
+    _("IceBody"), _("An icy world. Mines here yield 2 production; an irrigated habitat yields 1 food.")
+  }
 
 [parameters]
 
@@ -338,21 +347,21 @@ identifier           = "1"
 class                = "Land"
 movement_cost        = 1
 defense_bonus        = 0
-food                 = 0
-shield               = 2
+food                 = 2
+shield               = 0
 trade                = 0
 resources            = "Molten Planet", "Toxic Planet"
 road_food_incr_pct   = 0
 road_shield_incr_pct = 0
-road_trade_incr_pct  = 0
+road_trade_incr_pct  = 100
 base_time            = 1
-road_time            = 0
+road_time            = 2
 cultivate_result     = "no"
 cultivate_time       = 0
 plant_result         = "no"
 plant_time           = 0
-irrigation_food_incr = 0
-irrigation_time      = 0
+irrigation_food_incr = 1
+irrigation_time      = 3
 transform_result     = "no"
 transform_time       = 0
 animal               = "None"
@@ -361,7 +370,7 @@ warmer_drier_result  = "no"
 cooler_wetter_result = "no"
 cooler_drier_result  = "no"
 mining_shield_incr   = 0
-mining_time          = 0
+mining_time          = 5
 placing_time         = 1
 pillage_time         = 1
 native_to            = "Land", "Air", "Missile", "Helicopter"
@@ -370,8 +379,9 @@ color.r              = 150
 color.g              = 130
 color.b              = 110
 helptext             = _("\
-The scorched inner ring of a system, close enough to the star for energy to\
- be had cheaply. Only molten and toxic worlds form here.\
+The scorched inner ring of a system. Close to the star, sunlight is\
+ abundant and orbital farms are easy to keep lit, so a habitat here feeds\
+ itself well. Only molten and toxic worlds form in this ring.\
 ")
 
 [terrain_middle_system]
@@ -383,20 +393,20 @@ class                = "Land"
 movement_cost        = 1
 defense_bonus        = 0
 food                 = 1
-shield               = 1
-trade                = 1
+shield               = 0
+trade                = 0
 resources            = "Rocky Planet", "Rocky Moon"
 road_food_incr_pct   = 0
 road_shield_incr_pct = 0
-road_trade_incr_pct  = 0
+road_trade_incr_pct  = 100
 base_time            = 1
-road_time            = 0
+road_time            = 2
 cultivate_result     = "no"
 cultivate_time       = 0
 plant_result         = "no"
 plant_time           = 0
-irrigation_food_incr = 0
-irrigation_time      = 0
+irrigation_food_incr = 1
+irrigation_time      = 3
 transform_result     = "no"
 transform_time       = 0
 animal               = "None"
@@ -405,7 +415,7 @@ warmer_drier_result  = "no"
 cooler_wetter_result = "no"
 cooler_drier_result  = "no"
 mining_shield_incr   = 0
-mining_time          = 0
+mining_time          = 5
 placing_time         = 1
 pillage_time         = 1
 native_to            = "Land", "Air", "Missile", "Helicopter"
@@ -428,19 +438,19 @@ movement_cost        = 1
 defense_bonus        = 0
 food                 = 0
 shield               = 0
-trade                = 1
+trade                = 0
 resources            = "Rocky Moon", "Gas Giant", "Ice Planet", "Molten Moon", "Toxic Moon", "Ice Moon"
 road_food_incr_pct   = 0
 road_shield_incr_pct = 0
-road_trade_incr_pct  = 0
+road_trade_incr_pct  = 100
 base_time            = 1
-road_time            = 0
+road_time            = 2
 cultivate_result     = "no"
 cultivate_time       = 0
 plant_result         = "no"
 plant_time           = 0
-irrigation_food_incr = 0
-irrigation_time      = 0
+irrigation_food_incr = 1
+irrigation_time      = 3
 transform_result     = "no"
 transform_time       = 0
 animal               = "None"
@@ -449,7 +459,7 @@ warmer_drier_result  = "no"
 cooler_wetter_result = "no"
 cooler_drier_result  = "no"
 mining_shield_incr   = 0
-mining_time          = 0
+mining_time          = 5
 placing_time         = 1
 pillage_time         = 1
 native_to            = "Land", "Air", "Missile", "Helicopter"
@@ -471,19 +481,19 @@ class                = "Land"
 movement_cost        = 2
 defense_bonus        = 100
 food                 = 0
-shield               = 2
+shield               = 1
 trade                = 0
 road_food_incr_pct   = 0
 road_shield_incr_pct = 0
-road_trade_incr_pct  = 0
+road_trade_incr_pct  = 100
 base_time            = 1
-road_time            = 0
+road_time            = 3
 cultivate_result     = "no"
 cultivate_time       = 0
 plant_result         = "no"
 plant_time           = 0
-irrigation_food_incr = 0
-irrigation_time      = 0
+irrigation_food_incr = 1
+irrigation_time      = 5
 transform_result     = "no"
 transform_time       = 0
 animal               = "None"
@@ -491,8 +501,8 @@ warmer_wetter_result = "no"
 warmer_drier_result  = "no"
 cooler_wetter_result = "no"
 cooler_drier_result  = "no"
-mining_shield_incr   = 3
-mining_time          = 10
+mining_shield_incr   = 2
+mining_time          = 5
 placing_time         = 1
 pillage_time         = 1
 native_to            = "Land", "Air", "Missile", "Helicopter"
@@ -518,15 +528,15 @@ shield               = 1
 trade                = 0
 road_food_incr_pct   = 0
 road_shield_incr_pct = 0
-road_trade_incr_pct  = 0
+road_trade_incr_pct  = 100
 base_time            = 1
-road_time            = 0
+road_time            = 3
 cultivate_result     = "no"
 cultivate_time       = 0
 plant_result         = "no"
 plant_time           = 0
-irrigation_food_incr = 0
-irrigation_time      = 0
+irrigation_food_incr = 1
+irrigation_time      = 5
 transform_result     = "no"
 transform_time       = 0
 animal               = "None"
@@ -534,8 +544,8 @@ warmer_wetter_result = "no"
 warmer_drier_result  = "no"
 cooler_wetter_result = "no"
 cooler_drier_result  = "no"
-mining_shield_incr   = 0
-mining_time          = 0
+mining_shield_incr   = 1
+mining_time          = 5
 placing_time         = 1
 pillage_time         = 1
 native_to            = "Land", "Air", "Missile", "Helicopter"
@@ -1439,69 +1449,72 @@ shield      = 3 ; glacier used to have 4
 ; Celestial bodies. Planets and moons are resources rather than terrains, so
 ; that one ring terrain can carry several kinds of world; which body may appear
 ; on which ring is set by the "resources" line of the ring terrains above.
-; Planets are worth roughly twice their moons.
+; A planet and its moon are worth the same; what separates the worlds is what
+; kind of body they are, not their size.
 ;
 ; */ <-- avoid gettext warnings
+
+; A body's own output is 2 trade and (for a Gas Giant) 2 shields - the traffic
+; and telemetry a settled world generates just by being there. Everything else
+; it is worth has to be dug or grown out of it, and that yield lives in
+; effects.ruleset rather than here: a resource has no mining or irrigation
+; increment of its own, so the mined shields and irrigated food of each world
+; are Output_Add_Tile effects keyed on the Mine or Irrigation extra together
+; with the body's flag. A planet and its moon are worth the same.
 
 [resource_molten_planet]
 extra       = "Molten Planet"
 identifier  = "M"
-shield      = 4
+trade       = 2
 # inner system.
 
 [resource_molten_moon]
 extra       = "Molten Moon"
 identifier  = "m"
-shield      = 2
+trade       = 2
 # outer system (captured).
 
 [resource_toxic_planet]
 extra       = "Toxic Planet"
 identifier  = "T"
-shield      = 2
 trade       = 2
 # inner system.
 
 [resource_toxic_moon]
 extra       = "Toxic Moon"
 identifier  = "n"
-shield      = 1
-trade       = 1
+trade       = 2
 # outer system (captured).
 
 [resource_rocky_planet]
 extra       = "Rocky Planet"
 identifier  = "R"
-food        = 2
-shield      = 1
-# middle system - the one body worth settling for its own sake.
+trade       = 2
+# middle system.
 
 [resource_rocky_moon]
 extra       = "Rocky Moon"
 identifier  = "k"
-food        = 1
-shield      = 1
+trade       = 2
 # middle and outer system.
 
 [resource_gas_giant]
 extra       = "Gas Giant"
 identifier  = "G"
-shield      = 3
-trade       = 3
-# outer system.
+shield      = 2
+trade       = 2
+# outer system - the one body that pays before it is worked.
 
 [resource_ice_planet]
 extra       = "Ice Planet"
 identifier  = "I"
-food        = 2
 trade       = 2
 # outer system.
 
 [resource_ice_moon]
 extra       = "Ice Moon"
 identifier  = "l"
-food        = 1
-trade       = 1
+trade       = 2
 # outer system.
 
 [extraui]
@@ -2364,6 +2377,7 @@ causes         = "Resource"
 ;rmcauses       = ""
 graphic        = "ts.molten_planet"
 graphic_alt    = "ts.furs"
+flags          = "MoltenBody"
 activity_gfx   = "None"
 act_gfx_alt    = "-"
 act_gfx_alt2   = "-"
@@ -2377,6 +2391,7 @@ causes         = "Resource"
 ;rmcauses       = ""
 graphic        = "ts.molten_moon"
 graphic_alt    = "ts.peat"
+flags          = "MoltenBody"
 activity_gfx   = "None"
 act_gfx_alt    = "-"
 act_gfx_alt2   = "-"
@@ -2390,6 +2405,7 @@ causes         = "Resource"
 ;rmcauses       = ""
 graphic        = "ts.toxic_planet"
 graphic_alt    = "ts.arctic_ivory"
+flags          = "ToxicBody"
 activity_gfx   = "None"
 act_gfx_alt    = "-"
 act_gfx_alt2   = "-"
@@ -2403,6 +2419,7 @@ causes         = "Resource"
 ;rmcauses       = ""
 graphic        = "ts.toxic_moon"
 graphic_alt    = "ts.silk"
+flags          = "ToxicBody"
 activity_gfx   = "None"
 act_gfx_alt    = "-"
 act_gfx_alt2   = "-"
@@ -2416,6 +2433,7 @@ causes         = "Resource"
 ;rmcauses       = ""
 graphic        = "ts.rocky_planet"
 graphic_alt    = "ts.wine"
+flags          = "RockyBody"
 activity_gfx   = "None"
 act_gfx_alt    = "-"
 act_gfx_alt2   = "-"
@@ -2429,6 +2447,7 @@ causes         = "Resource"
 ;rmcauses       = ""
 graphic        = "ts.rocky_moon"
 graphic_alt    = "ts.spice"
+flags          = "RockyBody"
 activity_gfx   = "None"
 act_gfx_alt    = "-"
 act_gfx_alt2   = "-"
@@ -2455,6 +2474,7 @@ causes         = "Resource"
 ;rmcauses       = ""
 graphic        = "ts.ice_planet"
 graphic_alt    = "ts.buffalo"
+flags          = "IceBody"
 activity_gfx   = "None"
 act_gfx_alt    = "-"
 act_gfx_alt2   = "-"
@@ -2468,6 +2488,7 @@ causes         = "Resource"
 ;rmcauses       = ""
 graphic        = "ts.ice_moon"
 graphic_alt    = "ts.grassland_resources"
+flags          = "IceBody"
 activity_gfx   = "None"
 act_gfx_alt    = "-"
 act_gfx_alt2   = "-"
