@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Space ruleset - terrain</title>
+<style>
+:root {
+  --bg:#0b0e17; --panel:#141926; --line:#242b3d; --ink:#c9d1e0;
+  --dim:#6b7690; --head:#e8edf7;
+  --food:#7dc98a; --shield:#d9a441; --trade:#6fb3e0;
+}
+* { box-sizing:border-box }
+body { margin:0; padding:2.5rem 1.5rem 4rem; background:var(--bg); color:var(--ink);
+       font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif }
+main { max-width:60rem; margin:0 auto }
+h1 { font-size:1.7rem; color:var(--head); margin:0 0 .3rem; font-weight:600 }
+h2 { font-size:1.15rem; color:var(--head); margin:3rem 0 .4rem; font-weight:600 }
+h2:first-of-type { margin-top:2rem }
+p { margin:.5rem 0 }
+.lede { color:var(--dim); margin-bottom:0 }
+.note { color:var(--dim); font-size:.9rem }
+
+/* A sprite is a 96x48 window onto a sheet; layers stack in draw order. */
+.tile { position:relative; width:96px; height:48px; flex:none }
+.tile i { position:absolute; inset:0; background-repeat:no-repeat;
+          image-rendering:pixelated }
+
+.strip { display:flex; flex-wrap:wrap; gap:.75rem 1.25rem; margin:1rem 0 0;
+         padding:0; list-style:none }
+.strip li { text-align:center; width:96px }
+.strip span { display:block; font-size:.78rem; color:var(--dim); margin-top:.15rem }
+
+table { border-collapse:collapse; width:100%; margin-top:.75rem; font-size:.88rem }
+th,td { text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--line);
+        vertical-align:top }
+th { color:var(--dim); font-weight:500; font-size:.8rem; text-transform:uppercase;
+     letter-spacing:.04em; white-space:nowrap }
+td.n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap }
+tbody tr:hover { background:var(--panel) }
+.help { color:var(--dim); font-size:.85rem }
+
+.body { border-top:1px solid var(--line); padding:1.1rem 0 }
+.body h3 { margin:0 0 .1rem; font-size:1rem; color:var(--head); font-weight:600 }
+.body .where { color:var(--dim); font-size:.85rem; margin:0 0 .7rem }
+.states { display:flex; flex-wrap:wrap; gap:1.5rem }
+.state { text-align:center }
+.state b { display:block; font-weight:500; font-size:.8rem; color:var(--dim);
+           margin-bottom:.3rem; text-transform:uppercase; letter-spacing:.04em }
+.out { margin-top:.35rem; font-size:.85rem; font-variant-numeric:tabular-nums }
+.out span { margin:0 .18rem }
+.f { color:var(--food) } .s { color:var(--shield) } .t { color:var(--trade) }
+.z { color:var(--dim) }
+.up { font-weight:700 }
+
+footer { margin-top:3.5rem; padding-top:1.2rem; border-top:1px solid var(--line);
+         color:var(--dim); font-size:.82rem }
+footer a { color:var(--dim) }
+</style></head><body><main>
+<h1>Space terrain</h1>
+<p class="lede">Every terrain and celestial body in the space ruleset, drawn as the space tileset draws it, with what a city gets for working the tile. Generated from the ruleset &mdash; see the note at the foot.</p>
+<h2>A system, from the star outward</h2>
+<p>A star system is a disc of concentric rings. The three rings feed a colony, the two belts supply its ore, and beyond them is the void between systems.</p>
+<ul class="strip">
+<li><div class="tile"><i style="background:url(img/terrain1.png) -1px -491px"></i></div><span>Star</span></li>
+<li><div class="tile"><i style="background:url(img/terrain1.png) -1px -99px"></i></div><span>Inner System</span></li>
+<li><div class="tile"><i style="background:url(img/terrain1.png) -1px -50px"></i></div><span>Middle System</span></li>
+<li><div class="tile"><i style="background:url(img/terrain1.png) -1px -197px"></i><i style="background:url(img/hills.png) -1px -1px"></i></div><span>Asteroid Belt</span></li>
+<li><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i></div><span>Outer System</span></li>
+<li><div class="tile"><i style="background:url(img/terrain1.png) -1px -148px"></i><i style="background:url(img/terrain2.png) -1px -197px"></i></div><span>Kuiper Belt</span></li>
+<li><div class="tile"><i style="background:url(img/ocean.png) -384px -192px"></i></div><span>Near Space</span></li>
+<li><div class="tile"><i style="background:url(img/ocean.png) -768px -384px"></i></div><span>Interstellar Space</span></li>
+</ul>
+<h2>What each terrain is worth</h2>
+<p>Base output is what an unimproved tile produces. The irrigation and mining columns are what building the improvement <em>adds</em>, with the worker turns it costs. Nothing here produces trade except Near Space and a road.</p>
+<table><thead><tr>
+<th></th>
+<th>Terrain</th>
+<th>Food</th>
+<th>Shield</th>
+<th>Trade</th>
+<th>Irrigate</th>
+<th>Mine</th>
+<th>Road</th>
+<th>Move</th>
+<th>Def.</th>
+</tr></thead><tbody>
+<tr>
+<td><div class="tile"><i style="background:url(img/terrain1.png) -1px -491px"></i></div></td>
+<td><strong>Star</strong><br><span class="help">The star at the centre of a system. Nothing can enter it and no city can work its tile.</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+</tr>
+<tr>
+<td><div class="tile"><i style="background:url(img/terrain1.png) -1px -99px"></i></div></td>
+<td><strong>Inner System</strong><br><span class="help">The scorched inner ring of a system. Close to the star, sunlight is abundant and orbital farms are easy to keep lit, so a habitat here feeds itself well. Only molten and toxic worlds form in this ring.</span></td>
+<td class="n"><span class="f">2</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n">+1<span class="f">f</span> <span class="z">&middot; 3 turns</span></td>
+<td class="n"><span class="z">+0</span> <span class="z">&middot; 5 turns</span></td>
+<td class="n">+1<span class="t">t</span> <span class="z">&middot; 2 turns</span></td>
+<td class="n">1</td>
+<td class="n"><span class="z">&mdash;</span></td>
+</tr>
+<tr>
+<td><div class="tile"><i style="background:url(img/terrain1.png) -1px -50px"></i></div></td>
+<td><strong>Middle System</strong><br><span class="help">The temperate ring, where rocky worlds form. Every player starts on one of these.</span></td>
+<td class="n"><span class="f">1</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n">+1<span class="f">f</span> <span class="z">&middot; 3 turns</span></td>
+<td class="n"><span class="z">+0</span> <span class="z">&middot; 5 turns</span></td>
+<td class="n">+1<span class="t">t</span> <span class="z">&middot; 2 turns</span></td>
+<td class="n">1</td>
+<td class="n"><span class="z">&mdash;</span></td>
+</tr>
+<tr>
+<td><div class="tile"><i style="background:url(img/terrain1.png) -1px -197px"></i><i style="background:url(img/hills.png) -1px -1px"></i></div></td>
+<td><strong>Asteroid Belt</strong><br><span class="help">A ring of rubble between the middle and outer system. Slow to cross and easy to defend, and rich in ore for anyone willing to mine it.</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="s">1</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n">+1<span class="f">f</span> <span class="z">&middot; 5 turns</span></td>
+<td class="n">+2<span class="s">s</span> <span class="z">&middot; 5 turns</span></td>
+<td class="n">+1<span class="t">t</span> <span class="z">&middot; 3 turns</span></td>
+<td class="n">2</td>
+<td class="n">100%</td>
+</tr>
+<tr>
+<td><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i></div></td>
+<td><strong>Outer System</strong><br><span class="help">The cold outer ring. Gas giants and ice worlds sit here, along with the captured moons of the worlds further in. Bare rock and ice feed nobody, but an irrigated habitat out here yields two food - as much as the temperate ring. A colony can be planted anywhere in a system and still grow.</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n">+2<span class="f">f</span> <span class="z">&middot; 3 turns</span></td>
+<td class="n"><span class="z">+0</span> <span class="z">&middot; 5 turns</span></td>
+<td class="n">+1<span class="t">t</span> <span class="z">&middot; 2 turns</span></td>
+<td class="n">1</td>
+<td class="n"><span class="z">&mdash;</span></td>
+</tr>
+<tr>
+<td><div class="tile"><i style="background:url(img/terrain1.png) -1px -148px"></i><i style="background:url(img/terrain2.png) -1px -197px"></i></div></td>
+<td><strong>Kuiper Belt</strong><br><span class="help">The icy debris ring at the edge of a system, beyond the outermost orbit.</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="s">1</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n">+1<span class="f">f</span> <span class="z">&middot; 5 turns</span></td>
+<td class="n">+1<span class="s">s</span> <span class="z">&middot; 5 turns</span></td>
+<td class="n">+1<span class="t">t</span> <span class="z">&middot; 3 turns</span></td>
+<td class="n">2</td>
+<td class="n">50%</td>
+</tr>
+<tr>
+<td><div class="tile"><i style="background:url(img/ocean.png) -384px -192px"></i></div></td>
+<td><strong>Near Space</strong><br><span class="help">The empty space just outside a star system. Short-range ships can cross it.</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="t">1</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n">1</td>
+<td class="n"><span class="z">&mdash;</span></td>
+</tr>
+<tr>
+<td><div class="tile"><i style="background:url(img/ocean.png) -768px -384px"></i></div></td>
+<td><strong>Interstellar Space</strong><br><span class="help">The deep void between star systems. Only ships built for the crossing can survive out here.</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n">1</td>
+<td class="n"><span class="z">&mdash;</span></td>
+</tr>
+<tr>
+<td><div class="tile"><i style="background:url(img/terrain1.png) -1px -491px"></i></div></td>
+<td><strong>Inaccessible</strong><br><span class="help">No unit can enter this terrain, nor can any city work its tiles.</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">0</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+<td class="n"><span class="z">&mdash;</span></td>
+</tr>
+</tbody></table>
+<p class="note">The three rings carry a mining time but no mining bonus. That is deliberate: freeciv refuses Build Mine outright on a terrain with no mining time, so without it a world sitting on a ring could never be mined. A mine on a bare ring tile yields nothing.</p>
+<h2>Worlds</h2>
+<p>A planet or moon is not a terrain but a resource sitting on a ring, which is what lets one ring hold several kinds of world. Every world is worth 2 trade unworked; a gas giant also gives 2 shields. What separates them is what you can make of them &mdash; and a planet is worth exactly what its moon is.</p>
+<div class="body">
+<h3>Molten Planet</h3>
+<p class="where">on Inner System</p>
+<div class="states">
+<div class="state"><b>bare</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -99px"></i><i style="background:url(img/terrain1.png) -389px -246px"></i></div><div class="out"><span class="f">2</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -99px"></i><i style="background:url(img/terrain1.png) -389px -246px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="f">2</span><span class="s up">4</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -99px"></i><i style="background:url(img/terrain1.png) -389px -246px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">5</span><span class="z">0</span><span class="t">2</span></div></div>
+</div></div>
+<div class="body">
+<h3>Molten Moon</h3>
+<p class="where">on Outer System</p>
+<div class="states">
+<div class="state"><b>bare</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -195px -344px"></i></div><div class="out"><span class="z">0</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -195px -344px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="z">0</span><span class="s up">4</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -195px -344px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">4</span><span class="z">0</span><span class="t">2</span></div></div>
+</div></div>
+<div class="body">
+<h3>Toxic Planet</h3>
+<p class="where">on Inner System</p>
+<div class="states">
+<div class="state"><b>bare</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -99px"></i><i style="background:url(img/terrain1.png) -195px -295px"></i></div><div class="out"><span class="f">2</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -99px"></i><i style="background:url(img/terrain1.png) -195px -295px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="f">2</span><span class="s up">3</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -99px"></i><i style="background:url(img/terrain1.png) -195px -295px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">6</span><span class="z">0</span><span class="t">2</span></div></div>
+</div></div>
+<div class="body">
+<h3>Toxic Moon</h3>
+<p class="where">on Outer System</p>
+<div class="states">
+<div class="state"><b>bare</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -99px"></i></div><div class="out"><span class="z">0</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -99px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="z">0</span><span class="s up">3</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -99px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">5</span><span class="z">0</span><span class="t">2</span></div></div>
+</div></div>
+<div class="body">
+<h3>Rocky Planet</h3>
+<p class="where">on Middle System</p>
+<div class="states">
+<div class="state"><b>bare</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -50px"></i><i style="background:url(img/terrain1.png) -389px -148px"></i></div><div class="out"><span class="f">1</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -50px"></i><i style="background:url(img/terrain1.png) -389px -148px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="f">1</span><span class="s up">2</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -50px"></i><i style="background:url(img/terrain1.png) -389px -148px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">4</span><span class="z">0</span><span class="t">2</span></div></div>
+</div></div>
+<div class="body">
+<h3>Rocky Moon</h3>
+<p class="where">on Middle System and Outer System</p>
+<div class="states">
+<div class="state"><b>bare &middot; middle</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -50px"></i><i style="background:url(img/terrain1.png) -389px -344px"></i></div><div class="out"><span class="f">1</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined &middot; middle</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -50px"></i><i style="background:url(img/terrain1.png) -389px -344px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="f">1</span><span class="s up">2</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated &middot; middle</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -50px"></i><i style="background:url(img/terrain1.png) -389px -344px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">4</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>bare &middot; outer</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -344px"></i></div><div class="out"><span class="z">0</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined &middot; outer</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -344px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="z">0</span><span class="s up">2</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated &middot; outer</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -344px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">4</span><span class="z">0</span><span class="t">2</span></div></div>
+</div></div>
+<div class="body">
+<h3>Gas Giant</h3>
+<p class="where">on Outer System</p>
+<div class="states">
+<div class="state"><b>bare</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -442px"></i></div><div class="out"><span class="z">0</span><span class="s">2</span><span class="t">2</span></div></div>
+<div class="state"><b>mined</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -442px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="z">0</span><span class="s up">5</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -442px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">4</span><span class="s">2</span><span class="t">2</span></div></div>
+</div></div>
+<div class="body">
+<h3>Ice Planet</h3>
+<p class="where">on Outer System</p>
+<div class="states">
+<div class="state"><b>bare</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -195px -50px"></i></div><div class="out"><span class="z">0</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -195px -50px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="z">0</span><span class="s up">2</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -195px -50px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">3</span><span class="z">0</span><span class="t">2</span></div></div>
+</div></div>
+<div class="body">
+<h3>Ice Moon</h3>
+<p class="where">on Outer System</p>
+<div class="states">
+<div class="state"><b>bare</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -540px"></i></div><div class="out"><span class="z">0</span><span class="z">0</span><span class="t">2</span></div></div>
+<div class="state"><b>mined</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -540px"></i><i style="background:url(img/terrain1.png) -583px -148px"></i></div><div class="out"><span class="z">0</span><span class="s up">2</span><span class="t">2</span></div></div>
+<div class="state"><b>irrigated</b><div class="tile"><i style="background:url(img/terrain1.png) -1px -344px"></i><i style="background:url(img/terrain1.png) -389px -540px"></i><i style="background:url(img/terrain1.png) -583px -50px"></i></div><div class="out"><span class="f up">3</span><span class="z">0</span><span class="t">2</span></div></div>
+</div></div>
+<p class="note" style="margin-top:1.2rem">Numbers are food, shield, trade. A tile can be mined or irrigated, never both &mdash; the two conflict. A road adds 1 trade to any of the five workable terrains and appears free on a city centre.</p>
+<footer>
+<p>Generated by <code>docs/space/gen_terrain.py</code> from <code>data/space/terrain.ruleset</code> and <code>data/space/effects.ruleset</code>. Re-run it after any balance change rather than editing this page.</p>
+<p>Art from the space tileset, a repainted amplio2: space tiles, crystal and space station by AlexusBlack; main star and planets by Viktor; space organics by Wenrexa; hills by Peter Arbor; forest from Battle for Wesnoth. GPL v2.</p>
+</footer>
+</main></body></html>
