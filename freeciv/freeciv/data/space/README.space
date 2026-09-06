@@ -52,9 +52,14 @@ output; the improvement columns are what building it adds on top.
                   food  shield  trade   irrig.  mine   times (I/M/R)
   Inner System      2      0      0       +1     -        3 / 5 / 2
   Middle System     1      0      0       +1     -        3 / 5 / 2
-  Outer System      0      0      0       +1     -        3 / 5 / 2
+  Outer System      0      0      0       +2     -        3 / 5 / 2
   Asteroid Belt     0      1      0       +1    +2        5 / 5 / 3
   Kuiper Belt       0      1      0       +1    +1        5 / 5 / 3
+
+Outer System is barren but repays irrigation twice over, so a watered
+outer tile feeds a colony as well as a watered middle one. That is on
+purpose: every ring of a system should be worth settling from the
+start, rather than the rim being somewhere you expand into later.
 
 All five can take a road, worth +1 trade, and all five can be
 irrigated. The three rings are also irrigation *sources*: a space map

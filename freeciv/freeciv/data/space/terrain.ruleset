@@ -449,7 +449,7 @@ cultivate_result     = "no"
 cultivate_time       = 0
 plant_result         = "no"
 plant_time           = 0
-irrigation_food_incr = 1
+irrigation_food_incr = 2
 irrigation_time      = 3
 transform_result     = "no"
 transform_time       = 0
@@ -470,6 +470,10 @@ color.b              = 130
 helptext             = _("\
 The cold outer ring. Gas giants and ice worlds sit here, along with the\
  captured moons of the worlds further in.\
+\n\n\
+Bare rock and ice feed nobody, but an irrigated habitat out here yields\
+ two food - as much as the temperate ring. A colony can be planted\
+ anywhere in a system and still grow.\
 ")
 
 [terrain_asteroid_belt]

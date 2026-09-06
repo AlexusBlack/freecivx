@@ -153,9 +153,25 @@ road. Increments are what the improvement adds on top of the base.
 |---|---|---|---|---|---|---|
 | `Inner System` | 2 | 0 | 0 | +1 | — | 3 / 5 / 2 |
 | `Middle System` | 1 | 0 | 0 | +1 | — | 3 / 5 / 2 |
-| `Outer System` | 0 | 0 | 0 | +1 | — | 3 / 5 / 2 |
+| `Outer System` | 0 | 0 | 0 | **+2** | — | 3 / 5 / 2 |
 | `Asteroid Belt` | 0 | 1 | 0 | +1 | +2 | 5 / 5 / 3 |
 | `Kuiper Belt` | 0 | 1 | 0 | +1 | +1 | 5 / 5 / 3 |
+
+Outer System is the one ring whose irrigation is worth 2 rather than 1, which
+makes a watered outer tile feed a colony exactly as well as a watered middle one
+(2 food each). This is deliberate: the whole of a system should be settleable
+from turn one, instead of the rim being territory you only expand into once the
+good ground is taken. The rim keeps its own character through what it costs to
+get going — bare, 0 food until a worker arrives — and through the bodies it
+hosts, which include the gas giants.
+
+The `Irrigation_Pct` route means this needed no companion effect. Both the
+worker-built path (`effect_irrigation`) and the auto-irrigated city centre
+(`effect_irrigation_center`) are `Irrigation_Pct = 100` scalers over the
+terrain's own `irrigation_food_incr`, not flat bonuses, so a city founded on
+Outer System picks up the +2 on its centre tile automatically. The
+`Output_Add_Tile` body effects add on top of the ring, so every world on the
+outer ring also gains a food when irrigated.
 
 The rings have `mining_time > 0` but `mining_shield_incr = 0`. That is not a
 mistake: `TerrainAlter "CanMine"` is a hard requirement on Build Mine and means
