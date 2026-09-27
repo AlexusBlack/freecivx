@@ -768,6 +768,18 @@ names =
 ; space_setup() shrinks the system radius until enough of them fit the budget,
 ; so 30 forced systems down to about half Sol's radius no matter how much room
 ; the map had.
+;
+; 'contactturns' is 10, where webciv and multiplayer both set 0. Zero means
+; contact_turns_left is never above zero, and could_meet_with_player() then
+; needs an embassy for any meeting at all - so no cease-fire and no peace until
+; a Diplomat has physically reached a foreign city. That gate is affordable on
+; an Earth map, but not here: webciv already reassigned Marco Polo's Embassy to
+; a trade bonus, so units are the only source of embassies, and the Diplomat is
+; a Land unit while the space between systems is ocean terrain. Reaching a
+; neighbour therefore costs Writing, a Diplomat, a transport and a crossing
+; before the first word can be exchanged. Ten turns is short of the stock 20 -
+; contact still lapses if you drift apart - but it lets players who have
+; actually met negotiate.
 set =
     { "name", "value", "lock"
       "generator", "SPACE", FALSE
@@ -782,7 +794,7 @@ set =
       "aifill", 0, FALSE
       "dispersion", 0, FALSE
       "diplomacy", "ALL", FALSE
-      "contactturns", 0, FALSE
+      "contactturns", 10, FALSE
       "revolen", 2, FALSE
       "barbarians", "DISABLED", FALSE
       "techpenalty", 0, FALSE
