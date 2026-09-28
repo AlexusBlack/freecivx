@@ -1636,9 +1636,10 @@ static struct setting settings[] = {
               "- \"Star systems\" (SPACE): generates a map of interstellar "
               "space - scattered star systems, each a disc of concentric "
               "orbital rings, separated by empty void. Requires a ruleset "
-              "that defines the space terrains; all players start in the "
-              "system at the centre of the map, and 'startpos' and 'huts' "
-              "are ignored. Not supported on hex topologies.\n"
+              "that defines the space terrains; every player starts alone in "
+              "a system of their own, with the remaining systems left empty "
+              "to expand into, and 'startpos' and 'huts' are ignored. Not "
+              "supported on hex topologies.\n"
               "If the requested generator is incompatible with other server "
               "settings, the server may fall back to another generator."),
            NULL, generator_validate, NULL, generator_name, MAP_DEFAULT_GENERATOR)

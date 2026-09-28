@@ -1326,7 +1326,11 @@ bool map_fractal_generate(bool autosize, struct unit_type *initial_unit)
         && !map_generate_space()) {
       /* No sensible fallback. Falling back to ISLAND the way FAIR does below
        * would silently hand the player an Earth map on a space ruleset, so
-       * fail instead and let srv_main.c retry with another mapseed. */
+       * fail instead and let srv_main.c retry with another mapseed. Tear the
+       * temperature map down on the way out: this is the one exit that skips
+       * the destroy_tmap() at the end of the function, and leaving it up
+       * trips the assertion in create_tmap() on the retry. */
+      destroy_tmap();
       return FALSE;
     }
 

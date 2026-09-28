@@ -21,10 +21,21 @@ one a disc of concentric rings around a central star:
   Middle System  the temperate ring   (rocky worlds; players start here)
   Outer System   the cold outer ring  (gas giants, ice worlds)
   Asteroid Belt  a rubble ring between Middle and Outer
-  Kuiper Belt    a rubble ring outside Outer; sometimes absent from a
-                 procedural system, but always present in Sol
+  Kuiper Belt    a rubble ring outside Outer; not every system has one
   Near Space     the shallows just outside a system
   Interstellar Space  the deep void between systems
+
+Every system is built by the same code - there is no hand-authored
+system and no system at the centre of the map. A system may have one,
+two or three stars, and how many belts and worlds it carries varies.
+Each player wakes up alone in a system of their own, on the temperate
+Middle ring; the generator makes more systems than there are players,
+and the ones left over are what you expand into. The homes are picked
+out of the finished set rather than built to order: a system is
+eligible only if it has room and worlds enough to live in, the picks
+are taken from the systems closest to typical so nobody draws a
+visibly better start than their neighbour, and they are spread as far
+apart as the map allows.
 
 Planets and moons are not terrains but resources sitting on the ring
 terrains, which is what lets a single ring hold several different

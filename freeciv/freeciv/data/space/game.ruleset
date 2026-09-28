@@ -758,16 +758,19 @@ names =
 ; out as hexagons. It rejects hex outright, so the ruleset must not default to
 ; it. ISO alone is fine and keeps the diamond-grid look.
 ;
-; 'startpos' is left at DEFAULT because the generator ignores it: every player
-; starts in Sol. 'huts' is 0 for the same reason - there are none in space.
+; 'startpos' is left at DEFAULT because the generator ignores it: it gives
+; every player a system of their own regardless. 'huts' is 0 for the same
+; reason - there are none in space.
 ;
 ; 'landmass' (the wld.map.server.landpercent field) is the share of the map
 ; the generator is allowed to spend on systems - in space the "land" is system
-; tiles and the "ocean" is the void between them. The stock default of 30 is an
-; Earth number, and it was the binding constraint on system size:
-; space_setup() shrinks the system radius until enough of them fit the budget,
-; so 30 forced systems down to about half Sol's radius no matter how much room
-; the map had.
+; tiles and the "ocean" is the void between them. It is what decides how many
+; systems the map gets: space_setup() shrinks the system radius until enough of
+; them fit the budget, then takes however many that radius yields. The stock
+; default of 30 is an Earth number, and it was the binding constraint - it
+; squeezed systems down to the minimum radius no matter how much room the map
+; had, leaving too few of them to give every player one and still have empties
+; left over.
 ;
 ; 'contactturns' is 10, where webciv and multiplayer both set 0. Zero means
 ; contact_turns_left is never above zero, and could_meet_with_player() then

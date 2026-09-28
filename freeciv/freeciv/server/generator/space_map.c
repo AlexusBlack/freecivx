@@ -18,9 +18,9 @@
  * *resources* sitting on those rings rather than terrains of their own -
  * which is what lets one ring hold several kinds of world.
  *
- * At the centre of the map sits Sol, a hand-authored system whose composition
- * is identical in every game (only the orbital angles are drawn per map).
- * Every player starts there. Everything else is procedural.
+ * Every system is generated the same way; none is hand-authored. Players are
+ * placed one to a system, and the systems left over are the expansion
+ * targets.
  *
  * The full design, and the reasoning behind the constraints below, is in
  * docs/space_map_generator_plan.md. Three of them are worth repeating here
@@ -64,19 +64,31 @@
 #include "space_map.h"
 
 
-/* Sol must hold every player, so it has a floor independent of map size. */
-#define SOL_MIN_RADIUS       10
-#define TILES_PER_START      22
-
-/* Procedural systems. Their upper size is whatever space_setup() fits into
- * the budget, not a constant: anchoring the draw to an absolute floor made
- * every system small even on maps with room to spare. SYS_MIN_FRAC keeps the
- * spread narrow so the procedural systems stay comparable to Sol, and
- * SYS_ABS_MIN is the floor for maps too cramped to honour the fraction. */
+/* A system smaller than this is not worth generating, so space_setup() aims
+ * for it before it starts shrinking. Upper size is whatever fits the budget,
+ * not a constant: anchoring the draw to an absolute floor made every system
+ * small even on maps with room to spare. SYS_MIN_FRAC keeps the spread
+ * narrow so systems stay comparable to one another, and SYS_ABS_MIN is the
+ * floor for maps too cramped to honour the fraction. */
+#define SYS_MIN_RADIUS       8
 #define SYS_MIN_FRAC         0.70
 #define SYS_ABS_MIN          4
 #define MIN_GAP              3      /* free tiles between two system edges */
-#define MAX_GAP              15     /* above this, relaxation pulls closer */
+
+/* A system must clear these to be eligible to hold a player. Generation does
+ * not know which systems will: homes are chosen from the finished set, which
+ * is what keeps one generator honest for every star. The body and workable
+ * floors are what stop a trinary or a barren system from crippling whoever
+ * lands in it.
+ *
+ * The radius floor is a fraction of the largest system the map actually got,
+ * not an absolute: space_setup() shrinks the radius to fit the budget, so any
+ * constant large enough to mean "roomy" on a big map excludes every system on
+ * a small one - and excluding every system is how this generator fails. */
+#define HOME_MIN_RADIUS_FRAC 0.80
+#define HOME_MIN_BODIES      1
+#define HOME_MIN_WORKABLE    12
+#define HOME_TYPICAL_FRAC    0.85
 #define PACKING_EFFICIENCY   0.75   /* discs never tile the plane perfectly */
 /* Per system, not for the whole map: place_centres() places the largest disc
  * first and gives each one its own budget. */
@@ -97,7 +109,6 @@ struct space_system {
   struct tile *centre;
   int radius;                   /* R_kuiper - the true outer edge */
   int r_inner, r_middle, r_outer;
-  bool is_sol;
   int n_stars;
   int n_belts;
   int belt_r[MAX_BELTS];
@@ -122,21 +133,6 @@ static struct extra_type *res_molten_planet, *res_toxic_planet,
  * still reads as a disc; higher ones just look like noise. */
 static const int wobble_freq[3] = { 2, 3, 5 };
 
-/* Sol's fixed composition. Orbits are fractions of R_sol; angles are drawn
- * per map. 'clearance' is how many tiles the body needs to itself, which for
- * a body with moons must cover the neighbourhood its moons will fill. */
-struct sol_body {
-  double orbit;
-  struct extra_type **planet;
-  struct extra_type **moon;     /* NULL => moons of mixed type */
-  int n_moons;
-  int clearance;
-};
-
-/* Filled in resolve_ruleset(), since the extra pointers are not constants. */
-static struct sol_body sol_template[8];
-static int sol_template_size;
-
 
 /**********************************************************************//**
   Look up everything the generator needs by rule name. Returns FALSE, having
@@ -144,8 +140,6 @@ static int sol_template_size;
 **************************************************************************/
 static bool resolve_ruleset(void)
 {
-  int i = 0;
-
 #define RESOLVE_TER(var, name)                                              \
   var = terrain_by_rule_name(name);                                         \
   if (var == NULL) {                                                        \
@@ -184,19 +178,6 @@ static bool resolve_ruleset(void)
 #undef RESOLVE_TER
 #undef RESOLVE_RES
 
-  /* Sol, outermost orbit last. See plan section 3b. */
-  sol_template[i++] = (struct sol_body) { 0.20, &res_molten_planet, NULL,             0, 3 };
-  sol_template[i++] = (struct sol_body) { 0.28, &res_toxic_planet,  NULL,             0, 3 };
-  sol_template[i++] = (struct sol_body) { 0.42, &res_rocky_planet,  &res_rocky_moon,  1, 4 };
-  sol_template[i++] = (struct sol_body) { 0.52, &res_rocky_planet,  &res_rocky_moon,  2, 4 };
-  sol_template[i++] = (struct sol_body) { 0.72, &res_gas_giant,     NULL,             5, 5 };
-  sol_template[i++] = (struct sol_body) { 0.80, &res_gas_giant,     NULL,             3, 5 };
-  sol_template[i++] = (struct sol_body) { 0.86, &res_gas_giant,     NULL,             1, 5 };
-  sol_template[i++] = (struct sol_body) { 0.90, &res_ice_planet,    &res_ice_moon,    1, 4 };
-  sol_template_size = i;
-
-  fc_assert_ret_val(sol_template_size <= ARRAY_SIZE(sol_template), FALSE);
-
   return TRUE;
 }
 
@@ -229,29 +210,6 @@ static int scale_richness(int base)
 }
 
 /**********************************************************************//**
-  Tile at (dx, dy) from a system centre, or NULL if that falls off the map.
-  Goes through map_pos_to_tile() so that wrapping is handled for us.
-**************************************************************************/
-static struct tile *offset_tile(const struct tile *centre, int dx, int dy)
-{
-  int cx, cy;
-
-  index_to_map_pos(&cx, &cy, tile_index(centre));
-
-  return map_pos_to_tile(&(wld.map), cx + dx, cy + dy);
-}
-
-/**********************************************************************//**
-  Tile at polar offset (r, theta) from a system centre.
-**************************************************************************/
-static struct tile *polar_tile(const struct tile *centre, double r,
-                               double theta)
-{
-  return offset_tile(centre, (int) floor(r * cos(theta) + 0.5),
-                     (int) floor(r * sin(theta) + 0.5));
-}
-
-/**********************************************************************//**
   The per-system radial perturbation at a given angle, in tiles. Without it
   every system is a mechanically perfect disc.
 **************************************************************************/
@@ -271,13 +229,12 @@ static double wobble_at(const struct space_system *sys, double theta)
   Fill in the derived geometry of a system: ring radii, wobble, stars, belts.
 **************************************************************************/
 static void init_system(struct space_system *sys, struct tile *centre,
-                        int radius, bool is_sol)
+                        int radius)
 {
   int k, b;
 
   sys->centre = centre;
   sys->radius = radius;
-  sys->is_sol = is_sol;
   sys->r_inner  = (int) floor(FRAC_INNER  * radius + 0.5);
   sys->r_middle = (int) floor(FRAC_MIDDLE * radius + 0.5);
   sys->r_outer  = (int) floor(FRAC_OUTER  * radius + 0.5);
@@ -287,18 +244,16 @@ static void init_system(struct space_system *sys, struct tile *centre,
     sys->wobble_phase[k] = (float) (2.0 * M_PI * fc_rand(1000) / 1000.0);
   }
 
-  /* A procedural system may be a binary or trinary. Sol is always single:
-   * its composition is fixed, and extra stars would eat the inner ring the
-   * players start next to. */
-  sys->n_stars = is_sol ? 1 : 1 + fc_rand(3);
+  /* A system may be a binary or trinary. A crowded centre eats into the
+   * inner ring, which is why choose_home_systems() checks how much workable
+   * room a system actually has before putting a player in it. */
+  sys->n_stars = 1 + fc_rand(3);
 
   /* 'steepness' redefined: belt count and Kuiper probability. Stock default
    * is 30; treat that as the middle of the range. */
   sys->n_belts = 1 + (wld.map.server.steepness * MAX_BELTS) / 100;
   sys->n_belts = CLIP(0, sys->n_belts, MAX_BELTS);
-  /* Sol always has one: its composition is fixed, and the ice planet in the
-   * outermost orbit reads as an accident without the belt behind it. */
-  sys->has_kuiper = is_sol || (fc_rand(100) < 30 + wld.map.server.steepness);
+  sys->has_kuiper = (fc_rand(100) < 30 + wld.map.server.steepness);
 
   /* Belt radii, at least 2 apart so two belts never merge into a slab. */
   b = 0;
@@ -324,10 +279,10 @@ static void init_system(struct space_system *sys, struct tile *centre,
   Phase 0. Validate the topology and the ruleset, and decide how many
   systems of what size will fit. Returns FALSE if a space map is impossible.
 **************************************************************************/
-static bool space_setup(int *r_sol, int *n_procedural, int *r_procedural)
+static bool space_setup(int *n_systems, int *r_max)
 {
-  double area_budget, sol_area, sys_area;
-  int rs, n, r;
+  double area_budget, sys_area;
+  int target, n, r;
 
   /* plan 7.5: on hex topologies map_vector_to_sq_distance() squares the hex
    * real-distance, so circle_dxyr_iterate() would carve hexagons, not discs.
@@ -343,34 +298,23 @@ static bool space_setup(int *r_sol, int *n_procedural, int *r_procedural)
     return FALSE;
   }
 
-  /* Sol must have room for every player. */
-  rs = (int) ceil(sqrt(player_count() * TILES_PER_START / M_PI));
-  rs = MAX(rs, SOL_MIN_RADIUS);
-
-  sol_area = M_PI * (rs + MIN_GAP) * (rs + MIN_GAP);
   area_budget = map_num_tiles() * PACKING_EFFICIENCY;
 
-  if (sol_area > area_budget) {
-    log_error(_("The map is too small for the \"Star systems\" generator: "
-                "the home system alone needs about %d tiles of the %d "
-                "available. Use a larger map or fewer players."),
-              (int) sol_area, map_num_tiles());
-    return FALSE;
-  }
+  /* One system per player, plus room to expand into. The margin is what
+   * makes the map something other than a set of sealed starting boxes. */
+  target = player_count() + MAX(1, player_count() / 2);
 
-  /* Fit the procedural systems into what 'landpercent' asks for, then shrink
-   * R before shrinking N: a map of many small systems still plays, a map of
-   * two big ones does not. */
-  /* No procedural system is bigger than Sol: Sol is the map's anchor, and it
-   * earns that by composition - the fixed eight-body layout and the
-   * guaranteed Kuiper belt - rather than by dwarfing its neighbours. */
-  r = rs;
+  /* Fit the systems into what 'landpercent' asks for, shrinking R before
+   * giving up on N: a map of many small systems still plays, a map of two
+   * big ones does not. N is whatever the budget yields at the radius that
+   * first reaches the target, so a roomy map simply gets more systems. */
+  r = SYS_MIN_RADIUS;
   do {
     sys_area = M_PI * (r + MIN_GAP / 2.0) * (r + MIN_GAP / 2.0);
-    n = (int) ((map_num_tiles() * wld.map.server.landpercent / 100.0
-                - M_PI * rs * rs) / sys_area);
+    n = (int) (map_num_tiles() * wld.map.server.landpercent / 100.0
+               / sys_area);
 
-    if (n >= player_count() || r <= SYS_ABS_MIN) {
+    if (n >= target || r <= SYS_ABS_MIN) {
       break;
     }
     r--;
@@ -379,22 +323,31 @@ static bool space_setup(int *r_sol, int *n_procedural, int *r_procedural)
   n = MAX(n, 0);
 
   /* Never promise more than will physically fit. */
-  while (n > 0 && sol_area + n * sys_area > area_budget) {
+  while (n > 0 && n * sys_area > area_budget) {
     n--;
   }
 
-  log_verbose("Space generator: R_sol=%d, %d procedural systems of R<=%d "
-              "on %d tiles", rs, n, r, map_num_tiles());
+  log_verbose("Space generator: %d systems of R<=%d on %d tiles "
+              "(%d players, target %d)",
+              n, r, map_num_tiles(), player_count(), target);
 
-  if (n == 0) {
-    log_normal(_("The \"Star systems\" map has room for the home system "
-                 "only. Expansion will be impossible; consider a larger "
-                 "map or a higher 'landpercent'."));
+  if (n < player_count()) {
+    log_error(_("The map is too small for the \"Star systems\" generator: "
+                "it has room for %d star systems but there are %d players, "
+                "and each player needs a system of their own. Use a larger "
+                "map, a higher 'landpercent', or fewer players."),
+              n, player_count());
+    return FALSE;
   }
 
-  *r_sol = rs;
-  *n_procedural = n;
-  *r_procedural = r;
+  if (n == player_count()) {
+    log_normal(_("The \"Star systems\" map has room for one system per "
+                 "player and none to spare. Expansion will be impossible; "
+                 "consider a larger map or a higher 'landpercent'."));
+  }
+
+  *n_systems = n;
+  *r_max = r;
 
   return TRUE;
 }
@@ -428,8 +381,7 @@ static bool centre_is_clear(const struct tile *ptile, int radius)
 }
 
 /**********************************************************************//**
-  Phase 1. Place system centres: Sol pinned at the map centre, the rest by
-  dart throwing.
+  Phase 1. Place system centres by dart throwing.
 
   The radii are rolled up front and placed largest first. Rolling a fresh
   radius per throw - the obvious way, and what this did originally - packs
@@ -439,34 +391,28 @@ static bool centre_is_clear(const struct tile *ptile, int radius)
   discs first, each with its own attempt budget and shrinking by a tile when
   it cannot be placed, gets much closer to the requested count.
 **************************************************************************/
-static void place_centres(int r_sol, int n_procedural, int r_procedural)
+static void place_centres(int n_systems, int r_max)
 {
   int *radii;
   int r_min, i;
 
-  systems = fc_calloc(n_procedural + 1, sizeof(*systems));
+  systems = fc_calloc(n_systems, sizeof(*systems));
   num_systems = 0;
 
-  init_system(&systems[num_systems++],
-              native_pos_to_tile(&(wld.map), wld.map.xsize / 2,
-                                 wld.map.ysize / 2),
-              r_sol, TRUE);
-
-  if (n_procedural <= 0) {
+  if (n_systems <= 0) {
     return;
   }
 
-  r_min = MAX(SYS_ABS_MIN,
-              (int) floor(SYS_MIN_FRAC * r_procedural + 0.5));
-  r_min = MIN(r_min, r_procedural);
+  r_min = MAX(SYS_ABS_MIN, (int) floor(SYS_MIN_FRAC * r_max + 0.5));
+  r_min = MIN(r_min, r_max);
 
-  radii = fc_malloc(n_procedural * sizeof(*radii));
-  for (i = 0; i < n_procedural; i++) {
-    radii[i] = r_min + fc_rand(r_procedural - r_min + 1);
+  radii = fc_malloc(n_systems * sizeof(*radii));
+  for (i = 0; i < n_systems; i++) {
+    radii[i] = r_min + fc_rand(r_max - r_min + 1);
   }
-  qsort(radii, n_procedural, sizeof(*radii), cmp_radius_desc);
+  qsort(radii, n_systems, sizeof(*radii), cmp_radius_desc);
 
-  for (i = 0; i < n_procedural; i++) {
+  for (i = 0; i < n_systems; i++) {
     int radius = radii[i];
 
     while (radius >= SYS_ABS_MIN) {
@@ -483,7 +429,7 @@ static void place_centres(int r_sol, int n_procedural, int r_procedural)
       }
 
       if (found != NULL) {
-        init_system(&systems[num_systems++], found, radius, FALSE);
+        init_system(&systems[num_systems++], found, radius);
         break;
       }
 
@@ -496,7 +442,7 @@ static void place_centres(int r_sol, int n_procedural, int r_procedural)
   free(radii);
 
   log_verbose("Space generator: placed %d of %d systems, radii %d-%d",
-              num_systems, n_procedural + 1, r_min, r_procedural);
+              num_systems, n_systems, r_min, r_max);
 
   if (num_systems < player_count()) {
     log_normal(_("The \"Star systems\" map fitted only %d systems for %d "
@@ -680,7 +626,7 @@ static struct tile *find_body_site(struct space_system *sys,
 }
 
 /**********************************************************************//**
-  Phase 4. Populate one procedural system with planets and moons.
+  Phase 4. Populate one system with planets and moons.
 **************************************************************************/
 static void populate_system(struct space_system *sys)
 {
@@ -741,168 +687,215 @@ static void populate_system(struct space_system *sys)
 }
 
 /**********************************************************************//**
-  Phase 3b/4b. Sol's composition is fixed; only the angles are drawn. Bodies
-  are placed outermost first, because the outer orbits have the largest
-  clearance and the least angular slack.
+  How many tiles of this system a colony could actually work: ring tiles
+  with no body already on them. A trinary eats into the inner ring and a
+  crowded population leaves little bare ground, and either can make a system
+  a poor place to wake up in.
 **************************************************************************/
-static void populate_sol(struct space_system *sys)
+static int workable_tiles(const struct space_system *sys)
 {
-  double angle[ARRAY_SIZE(sol_template)];
-  double radius[ARRAY_SIZE(sol_template)];
-  struct extra_type *giant_moons[4];
-  int i, j, tries;
+  int n = 0;
 
-  giant_moons[0] = res_molten_moon;
-  giant_moons[1] = res_toxic_moon;
-  giant_moons[2] = res_rocky_moon;
-  giant_moons[3] = res_ice_moon;
+  circle_dxyr_iterate(&(wld.map), sys->centre, sys->radius * sys->radius,
+                      ptile, dx, dy, dr) {
+    struct terrain *pterr = tile_terrain(ptile);
 
-  for (i = 0; i < sol_template_size; i++) {
-    radius[i] = sol_template[i].orbit * sys->radius;
-  }
-
-  /* Rejection sampling on the chord distance. Two bodies on *different*
-   * orbits are further apart than their angular difference alone suggests,
-   * so the constraint is checked as a real distance rather than as an angle:
-   *   d = sqrt(r_a^2 + r_b^2 - 2 r_a r_b cos(theta_a - theta_b)) */
-  for (i = sol_template_size - 1; i >= 0; i--) {
-    bool ok = FALSE;
-
-    for (tries = 0; tries < MAX_ANGLE_TRIES && !ok; tries++) {
-      angle[i] = 2.0 * M_PI * fc_rand(3600) / 3600.0;
-      ok = TRUE;
-
-      for (j = i + 1; j < sol_template_size; j++) {
-        double d = sqrt(radius[i] * radius[i] + radius[j] * radius[j]
-                        - 2.0 * radius[i] * radius[j]
-                          * cos(angle[i] - angle[j]));
-
-        if (d < MAX(sol_template[i].clearance, sol_template[j].clearance)) {
-          ok = FALSE;
-          break;
-        }
-      }
+    if ((pterr == ter_inner || pterr == ter_middle || pterr == ter_outer)
+        && tile_resource(ptile) == NULL) {
+      n++;
     }
+  } circle_dxyr_iterate_end;
 
-    if (!ok) {
-      /* Deterministic even spacing plus a jitter. Worse-looking than a
-       * successful draw, but it never leaves a body unplaced. */
-      angle[i] = 2.0 * M_PI * i / sol_template_size
-        + (fc_rand(200) - 100) / 1000.0;
-      log_verbose("Space generator: Sol body %d fell back to even spacing", i);
-    }
-  }
-
-  for (i = 0; i < sol_template_size; i++) {
-    const struct sol_body *body = &sol_template[i];
-    struct tile *ptile = NULL;
-    double dr;
-
-    /* The ideal tile may have been taken by the ring wobble (which can push
-     * an orbit into the Kuiper annulus) or by a belt, so search outward from
-     * it. Sol's composition is fixed and must not silently lose a body the
-     * way a procedural system may. */
-    for (dr = 0.0; dr <= 2.0 && ptile == NULL; dr += 0.5) {
-      double d;
-
-      for (d = 0.0; d <= 0.5 && ptile == NULL; d += 0.1) {
-        struct tile *cand = polar_tile(sys->centre, radius[i] - dr,
-                                       angle[i] + d);
-
-        if (cand != NULL && try_place_body(cand, *body->planet)) {
-          ptile = cand;
-        }
-      }
-    }
-
-    if (ptile == NULL) {
-      log_error("Space generator: Sol body %d (%s) could not be placed "
-                "at r=%.1f", i, extra_rule_name(*body->planet), radius[i]);
-      continue;
-    }
-
-    if (body->n_moons > 0) {
-      if (body->moon != NULL) {
-        place_moons(ptile, body->moon, 1, body->n_moons);
-      } else {
-        place_moons(ptile, giant_moons, 4, body->n_moons);
-      }
-    }
-  }
+  return n;
 }
 
 /**********************************************************************//**
-  Phase 4b. Every player starts in Sol, spread by angle around the band
-  between the inner and middle rings.
+  How many celestial bodies this system holds.
+**************************************************************************/
+static int body_count(const struct space_system *sys)
+{
+  int n = 0;
+
+  circle_dxyr_iterate(&(wld.map), sys->centre, sys->radius * sys->radius,
+                      ptile, dx, dy, dr) {
+    if (tile_resource(ptile) != NULL) {
+      n++;
+    }
+  } circle_dxyr_iterate_end;
+
+  return n;
+}
+
+/**********************************************************************//**
+  Phase 4b, first half. Choose which systems the players wake up in.
+
+  Every system was generated by the same code, so a home is *selected*, not
+  built: this runs after population and reads the finished article. Three
+  stages - reject systems nobody could live in, prefer the ones closest to
+  typical so no player draws a visibly better system than their neighbour,
+  then spread the picks as far apart as the map allows.
+
+  Returns the number chosen, which is player_count() on success. Fills
+  home[] with indices into systems[].
+**************************************************************************/
+static int choose_home_systems(int *home)
+{
+  int *eligible = fc_malloc(num_systems * sizeof(*eligible));
+  int *pool = fc_malloc(num_systems * sizeof(*pool));
+  int *work = fc_malloc(num_systems * sizeof(*work));
+  int *sorted = fc_malloc(num_systems * sizeof(*sorted));
+  int n_eligible = 0, n_pool = 0, n_home = 0;
+  int median, r_best = 0, r_floor, i, j;
+  double frac;
+
+  for (i = 0; i < num_systems; i++) {
+    r_best = MAX(r_best, systems[i].radius);
+  }
+  r_floor = MAX(SYS_ABS_MIN, (int) floor(HOME_MIN_RADIUS_FRAC * r_best));
+
+  for (i = 0; i < num_systems; i++) {
+    work[i] = workable_tiles(&systems[i]);
+
+    if (systems[i].radius >= r_floor
+        && body_count(&systems[i]) >= HOME_MIN_BODIES
+        && work[i] >= HOME_MIN_WORKABLE) {
+      eligible[n_eligible++] = i;
+    }
+  }
+
+  if (n_eligible < player_count()) {
+    log_error(_("The \"Star systems\" generator produced only %d systems fit "
+                "to start in, for %d players."),
+              n_eligible, player_count());
+    log_verbose("Space generator: %d systems, largest R=%d, home floor R=%d",
+                num_systems, r_best, r_floor);
+    free(eligible);
+    free(pool);
+    free(work);
+    free(sorted);
+    return 0;
+  }
+
+  /* Typicality band around the median, widened until it holds enough
+   * candidates. The eligibility floor above is never relaxed - a start has
+   * to be viable before it is allowed to be merely unusual.
+   *
+   * The measure is workable tiles, not radius. Radius is the wrong proxy:
+   * space_setup() draws every radius from a deliberately narrow range, so
+   * banding on it rejects nothing, while the room a system actually offers
+   * still varies severalfold with how many stars crowd the centre, how many
+   * belts cut through the rings and how much of the ground bodies already
+   * occupy. Banding is two-sided for the same reason the floor exists: a
+   * home twice as rich as its neighbours is as unfair as one half as rich. */
+  for (i = 0; i < n_eligible; i++) {
+    sorted[i] = work[eligible[i]];
+  }
+  qsort(sorted, n_eligible, sizeof(*sorted), cmp_radius_desc);
+  median = sorted[n_eligible / 2];
+
+  for (frac = HOME_TYPICAL_FRAC; ; frac -= 0.05) {
+    n_pool = 0;
+    for (i = 0; i < n_eligible; i++) {
+      if (work[eligible[i]] >= frac * median
+          && (frac <= 0.0 || work[eligible[i]] <= median / frac)) {
+        pool[n_pool++] = eligible[i];
+      }
+    }
+    if (n_pool >= player_count() || frac <= 0.0) {
+      break;
+    }
+  }
+
+  /* Farthest-point sampling: seed at random, then repeatedly take whichever
+   * candidate is furthest from everything picked so far. */
+  i = fc_rand(n_pool);
+  home[n_home++] = pool[i];
+  pool[i] = pool[--n_pool];
+
+  while (n_home < player_count() && n_pool > 0) {
+    int best = 0, best_d = -1;
+
+    for (i = 0; i < n_pool; i++) {
+      int nearest = -1;
+
+      for (j = 0; j < n_home; j++) {
+        int d = real_map_distance(systems[pool[i]].centre,
+                                  systems[home[j]].centre);
+
+        if (nearest < 0 || d < nearest) {
+          nearest = d;
+        }
+      }
+      if (nearest > best_d) {
+        best_d = nearest;
+        best = i;
+      }
+    }
+
+    home[n_home++] = pool[best];
+    pool[best] = pool[--n_pool];
+  }
+
+  log_verbose("Space generator: %d homes chosen from %d eligible, %d typical "
+              "(median %d workable tiles, band %.2f), %d systems left empty",
+              n_home, n_eligible, n_pool + n_home, median, frac,
+              num_systems - n_home);
+
+  free(eligible);
+  free(pool);
+  free(work);
+  free(sorted);
+
+  return n_home;
+}
+
+/**********************************************************************//**
+  Phase 4b, second half. One start position per home system.
 
   Doing this ourselves is what makes map_fractal_generate() skip
   create_start_positions() (it guards on map_startpos_count() == 0), which in
   turn means the TER_STARTER filter and the "at least player_count() + 3
   continents" rule never apply to a space map.
 **************************************************************************/
-static bool place_start_positions(struct space_system *sol)
+static bool place_start_positions(const int *home, int n_home)
 {
-  struct tile **chosen = fc_calloc(player_count(), sizeof(*chosen));
-  double band = sol->r_inner + (sol->r_middle - sol->r_inner) / 2.0;
-  int placed = 0;
   int i;
 
-  for (i = 0; i < player_count(); i++) {
-    double theta = 2.0 * M_PI * i / player_count();
+  for (i = 0; i < n_home; i++) {
+    struct space_system *sys = &systems[home[i]];
     struct tile *found = NULL;
-    double dr;
+    int pass;
 
-    /* Walk outward from the ideal spot until a usable tile turns up. */
-    for (dr = 0.0; dr <= sol->r_outer - band && found == NULL; dr += 1.0) {
-      double d;
+    /* The temperate ring first - that is where the ruleset's helptext says
+     * players start, and it is the only ring that feeds a colony without
+     * being irrigated first. Outer before Inner on the fallback, because
+     * Inner is the ring the stars crowd. */
+    for (pass = 0; pass < 3 && found == NULL; pass++) {
+      struct terrain *want = (pass == 0 ? ter_middle
+                              : pass == 1 ? ter_outer : ter_inner);
+      int seen = 0;
 
-      for (d = -0.3; d <= 0.3 && found == NULL; d += 0.15) {
-        struct tile *ptile = polar_tile(sol->centre, band + dr, theta + d);
-        struct terrain *pterr;
-        bool too_close = FALSE;
-        int j;
-
-        if (ptile == NULL) {
-          continue;
-        }
-        pterr = tile_terrain(ptile);
-        if (pterr != ter_inner && pterr != ter_middle && pterr != ter_outer) {
-          continue;             /* star, belt or void */
-        }
-        if (tile_resource(ptile) != NULL) {
-          continue;             /* don't start on top of a planet */
-        }
-
-        for (j = 0; j < placed; j++) {
-          if (real_map_distance(ptile, chosen[j]) < 3) {
-            too_close = TRUE;
-            break;
+      circle_dxyr_iterate(&(wld.map), sys->centre, sys->radius * sys->radius,
+                          ptile, dx, dy, dr) {
+        if (tile_terrain(ptile) == want && tile_resource(ptile) == NULL) {
+          /* Reservoir sample, so a start is not always at the same bearing
+           * from its star. */
+          seen++;
+          if (fc_rand(seen) == 0) {
+            found = ptile;
           }
         }
-        if (!too_close) {
-          found = ptile;
-        }
-      }
+      } circle_dxyr_iterate_end;
     }
 
     if (found == NULL) {
-      log_error(_("The \"Star systems\" generator could not fit %d start "
-                  "positions into the home system."), player_count());
-      free(chosen);
+      log_error(_("The \"Star systems\" generator could not find a start "
+                  "tile in the system chosen for player %d."), i + 1);
       return FALSE;
     }
 
-    chosen[placed++] = found;
+    (void) map_startpos_new(found);
   }
-
-  for (i = 0; i < placed; i++) {
-    struct startpos *psp = map_startpos_new(chosen[i]);
-
-    /* A fresh startpos allows no nation at all until told otherwise. */
-    startpos_allows_all(psp);
-  }
-
-  free(chosen);
 
   return TRUE;
 }
@@ -943,8 +936,8 @@ static void warn_ignored_settings(void)
                  "setting is ignored."));
   }
   if (wld.map.server.startpos != MAPSTARTPOS_DEFAULT) {
-    log_normal(_("The \"Star systems\" generator places all players in the "
-                 "home system; the 'startpos' setting is ignored."));
+    log_normal(_("The \"Star systems\" generator gives every player a star "
+                 "system of their own; the 'startpos' setting is ignored."));
   }
 }
 
@@ -954,7 +947,8 @@ static void warn_ignored_settings(void)
 **************************************************************************/
 bool map_generate_space(void)
 {
-  int r_sol, n_procedural, r_procedural;
+  int n_systems, r_max, n_home;
+  int *home;
   bool ok = TRUE;
   int i;
 
@@ -962,7 +956,7 @@ bool map_generate_space(void)
   num_systems = 0;
   body_taken = NULL;
 
-  if (!space_setup(&r_sol, &n_procedural, &r_procedural)) {
+  if (!space_setup(&n_systems, &r_max)) {
     return FALSE;
   }
 
@@ -971,7 +965,7 @@ bool map_generate_space(void)
   body_taken = fc_calloc(MAP_INDEX_SIZE, sizeof(*body_taken));
   create_placed_map();
 
-  place_centres(r_sol, n_procedural, r_procedural);
+  place_centres(n_systems, r_max);
   fill_background();
 
   for (i = 0; i < num_systems; i++) {
@@ -980,8 +974,7 @@ bool map_generate_space(void)
 
   /* Bodies only after every system's terrain exists: try_place_body() reads
    * the terrain to decide whether a body belongs there. */
-  populate_sol(&systems[0]);
-  for (i = 1; i < num_systems; i++) {
+  for (i = 0; i < num_systems; i++) {
     populate_system(&systems[i]);
   }
 
@@ -999,9 +992,15 @@ bool map_generate_space(void)
                 num_systems, bodies);
   }
 
-  if (!place_start_positions(&systems[0])) {
+  /* Homes are picked from the finished systems, so this must follow
+   * population: choose_home_systems() weighs each system by what is
+   * actually in it. */
+  home = fc_malloc(MAX(1, player_count()) * sizeof(*home));
+  n_home = choose_home_systems(home);
+  if (n_home < player_count() || !place_start_positions(home, n_home)) {
     ok = FALSE;
   }
+  free(home);
 
   /* Suppress the stock post-passes. add_resources() would ignore our
    * structure and its 1-tile minimum spacing makes a moon beside its planet
