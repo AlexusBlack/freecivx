@@ -97,6 +97,13 @@
 
 #define MAX_BELTS            3
 
+/* How the sky is divided between single, binary and trinary systems, in per
+ * cent; the trinary share is whatever the two below leave over. Single stars
+ * dominate deliberately - a multiple system should be a thing a player
+ * remarks on when they find one. */
+#define PCT_SINGLE_STAR      65
+#define PCT_BINARY_STAR      25
+
 /* How far the navigable shallows reach beyond a system's outer edge. */
 #define NEAR_SPACE_BAND      3
 
@@ -231,7 +238,7 @@ static double wobble_at(const struct space_system *sys, double theta)
 static void init_system(struct space_system *sys, struct tile *centre,
                         int radius)
 {
-  int k, b;
+  int k, b, roll;
 
   sys->centre = centre;
   sys->radius = radius;
@@ -244,10 +251,16 @@ static void init_system(struct space_system *sys, struct tile *centre,
     sys->wobble_phase[k] = (float) (2.0 * M_PI * fc_rand(1000) / 1000.0);
   }
 
-  /* A system may be a binary or trinary. A crowded centre eats into the
-   * inner ring, which is why choose_home_systems() checks how much workable
-   * room a system actually has before putting a player in it. */
-  sys->n_stars = 1 + fc_rand(3);
+  /* Most systems are a single star; a binary is uncommon and a trinary rare.
+   * The weighting matters: drawing uniformly from {1, 2, 3} - which is what
+   * '1 + fc_rand(3)' did - made two thirds of the sky multiple, so a binary
+   * read as the norm rather than as something worth noticing. A crowded
+   * centre also eats into the inner ring, which is why choose_home_systems()
+   * checks how much workable room a system actually has before putting a
+   * player in it. */
+  roll = fc_rand(100);
+  sys->n_stars = (roll < PCT_SINGLE_STAR ? 1
+                  : (roll < PCT_SINGLE_STAR + PCT_BINARY_STAR ? 2 : 3));
 
   /* 'steepness' redefined: belt count and Kuiper probability. Stock default
    * is 30; treat that as the middle of the range. */

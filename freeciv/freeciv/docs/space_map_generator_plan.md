@@ -421,8 +421,11 @@ Assign terrain from `r_eff`: `<= R_inner` → `Inner System`,
 `<= R_kuiper` → `Outer System` (the Kuiper annulus is overwritten below if
 present).
 
-**Stars:** `n_stars = 1 + fc_rand(3)`. Place `Star` terrain on the centre tile
-and, for `n_stars > 1`, on additional tiles with `dr <= 2`.
+**Stars:** `n_stars` is drawn from a weighted distribution - 65% single, 25%
+binary, 10% trinary (`PCT_SINGLE_STAR` / `PCT_BINARY_STAR`), not uniformly from
+{1,2,3}, which would have made two thirds of the sky multiple and a binary read
+as the norm. Place `Star` terrain on the centre tile and, for `n_stars > 1`, on
+additional tiles with `dr <= 2`.
 
 **Asteroid belts (any ring):** choose `n_belts = 1 + fc_rand(3)`. Each belt is a
 width-1 annulus at a radius drawn uniformly from `[2, R_outer]` — i.e. it may
